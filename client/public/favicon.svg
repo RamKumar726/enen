@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="flameGrad1" x1="0%" y1="100%" x2="50%" y2="0%">
+      <stop offset="0%" stop-color="#D9480F" />
+      <stop offset="50%" stop-color="#E85D3D" />
+      <stop offset="100%" stop-color="#FF7A00" />
+    </linearGradient>
+    <linearGradient id="flameGrad2" x1="50%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#E85D3D" />
+      <stop offset="70%" stop-color="#FF3D00" />
+      <stop offset="100%" stop-color="#FFC107" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <!-- Background Circle -->
+  <rect width="100" height="100" rx="24" fill="#121216"/>
+  
+  <!-- Left Flame -->
+  <path d="M 38 82 C 22 75 16 56 25 40 C 28 35 34 30 33 22 C 45 32 50 48 44 64 C 42 70 41 78 38 82 Z" fill="url(#flameGrad1)" filter="url(#glow)"/>
+  
+  <!-- Right Flame -->
+  <path d="M 62 82 C 78 75 84 56 75 40 C 72 35 66 30 67 22 C 55 32 50 48 56 64 C 58 70 59 78 62 82 Z" fill="url(#flameGrad2)" filter="url(#glow)"/>
+  
+  <!-- Center Core Flame Fusion -->
+  <path d="M 50 78 C 42 70 45 56 50 46 C 55 56 58 70 50 78 Z" fill="#FFD166"/>
+</svg>
