@@ -94,7 +94,10 @@ export const userService = {
 // Admin Services
 export const adminService = {
   getDashboard: () => api.get('/admin/dashboard'),
-  getAnalytics: () => api.get('/admin/analytics')
+  getAnalytics: () => api.get('/admin/analytics'),
+  getAllOrders: (params) => api.get('/admin/orders', { params }),
+  getAllUsers: () => api.get('/admin/users'),
+  updateUserRole: (id, role) => api.put(`/admin/users/${id}/role`, { role })
 };
 
 // Payment Services

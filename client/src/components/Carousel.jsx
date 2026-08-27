@@ -1,72 +1,89 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Flame, Sparkles, ArrowRight, Tag } from 'lucide-react';
+import { motion, AnimatePresence, useScroll, useTransform, useSpring } from 'framer-motion';
+import { ChevronLeft, ChevronRight, ArrowRight, Tag, Flame } from 'lucide-react';
 import { carouselService } from '../services/api';
+import { useTheme } from '../context/ThemeContext';
 
 const defaultBanners = [
   {
     _id: 'b1',
-    imageUrl: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?auto=format&fit=crop&w=1400&q=80',
-    title: 'SUMMER DROP — 30% OFF ON ALL ANIME TEES',
-    description: 'Unleash the blaze with 240 GSM heavyweight oversized streetwear. Set your style ablaze!',
+    imageUrl: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?auto=format&fit=crop&w=1600&q=90',
+    title: 'SUMMER DROP',
+    subtitle: '30% OFF ALL ANIME TEES',
+    description: 'Unleash the blaze. 240 GSM heavyweight oversized streetwear.',
     discountPercentage: 30,
-    ctaText: 'EXPLORE DROP NOW',
-    ctaLink: '/shop?category=Oversized'
+    ctaText: 'EXPLORE DROP',
+    ctaLink: '/shop?category=Oversized',
+    accent: '#E85D3D'
   },
   {
     _id: 'b2',
-    imageUrl: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=1400&q=80',
-    title: 'DEMON SLAYER EXCLUSIVE HASHIRA COLLECTION',
-    description: 'Tanjiro, Nezuko, Rengoku, and Muzan high-density puff prints. Never fades.',
+    imageUrl: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=1600&q=90',
+    title: 'DEMON SLAYER',
+    subtitle: 'HASHIRA COLLECTION',
+    description: 'Tanjiro, Rengoku & Muzan high-density puff prints. Never fades.',
     discountPercentage: 20,
     ctaText: 'SHOP DEMON SLAYER',
-    ctaLink: '/collection/Demon Slayer'
+    ctaLink: '/collection/Demon Slayer',
+    accent: '#FF7A00'
   },
   {
     _id: 'b3',
-    imageUrl: 'https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?auto=format&fit=crop&w=1400&q=80',
-    title: 'ONE PIECE GEAR 5 SUN GOD NIKA RELEASE',
-    description: 'The Warrior of Liberation. Ultra heavyweight boxy tees with metallic foil accents.',
+    imageUrl: 'https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?auto=format&fit=crop&w=1600&q=90',
+    title: 'ONE PIECE',
+    subtitle: 'SUN GOD NIKA × GEAR 5',
+    description: 'The Warrior of Liberation. Ultra heavyweight boxy tees.',
     discountPercentage: 25,
-    ctaText: 'VIEW ONE PIECE DROP',
-    ctaLink: '/collection/One Piece'
+    ctaText: 'VIEW ONE PIECE',
+    ctaLink: '/collection/One Piece',
+    accent: '#E85D3D'
   },
   {
     _id: 'b4',
-    imageUrl: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=1400&q=80',
-    title: 'ATTACK ON TITAN FREEDOM WINGS SWEATSHIRTS',
-    description: 'If you win, you live. Distressed vintage washed heavy Terry sweatshirts.',
+    imageUrl: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=1600&q=90',
+    title: 'ATTACK ON TITAN',
+    subtitle: 'FREEDOM WINGS',
+    description: 'Distressed vintage washed heavy Terry sweatshirts.',
     discountPercentage: 15,
     ctaText: 'EXPLORE SWEATSHIRTS',
-    ctaLink: '/shop?category=Sweatshirt'
+    ctaLink: '/shop?category=Sweatshirt',
+    accent: '#94A3B8'
   },
   {
     _id: 'b5',
-    imageUrl: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=1400&q=80',
-    title: 'MY HERO ACADEMIA PLUS ULTRA STREETWEAR',
-    description: 'Deku, Bakugo, & All Might limited edition graphic prints.',
+    imageUrl: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=1600&q=90',
+    title: 'MY HERO',
+    subtitle: 'PLUS ULTRA STREETWEAR',
+    description: 'Deku, Bakugo & All Might limited edition prints.',
     discountPercentage: 35,
     ctaText: 'GET PLUS ULTRA',
-    ctaLink: '/collection/My Hero Academia'
+    ctaLink: '/collection/My Hero Academia',
+    accent: '#60A5FA'
   }
 ];
 
 const Carousel = ({ overrideBanners, videoUrl }) => {
+  const { isDark } = useTheme();
   const [banners, setBanners] = useState(overrideBanners || defaultBanners);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [direction, setDirection] = useState(1);
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
+  const heroRef = useRef(null);
+
+  /* Parallax — gentle on mobile for perf */
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
+  const rawY = useTransform(scrollYProgress, [0, 1], [0, 120]);
+  const parallaxY = useSpring(rawY, { stiffness: 50, damping: 18 });
+  const scaleImg = useTransform(scrollYProgress, [0, 1], [1, 1.08]);
+  const contentOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
   useEffect(() => {
     if (!overrideBanners) {
       carouselService.getActiveBanners()
-        .then(res => {
-          if (res.success && res.banners?.length > 0) {
-            setBanners(res.banners);
-          }
-        })
+        .then(res => { if (res.success && res.banners?.length > 0) setBanners(res.banners); })
         .catch(() => {});
     } else {
       setBanners(overrideBanners);
@@ -75,172 +92,199 @@ const Carousel = ({ overrideBanners, videoUrl }) => {
 
   useEffect(() => {
     if (isPaused || banners.length <= 1) return;
-    const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % banners.length);
-    }, 5000);
-    return () => clearInterval(timer);
+    const t = setInterval(() => { setDirection(1); setCurrentIndex(p => (p + 1) % banners.length); }, 5500);
+    return () => clearInterval(t);
   }, [isPaused, banners.length]);
 
-  const handleNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % banners.length);
-  };
+  const goNext = () => { setDirection(1); setCurrentIndex(p => (p + 1) % banners.length); };
+  const goPrev = () => { setDirection(-1); setCurrentIndex(p => (p - 1 + banners.length) % banners.length); };
 
-  const handlePrev = () => {
-    setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length);
-  };
-
-  const handleTouchStart = (e) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchMove = (e) => {
-    touchEndX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = () => {
-    const diff = touchStartX.current - touchEndX.current;
-    if (diff > 50) handleNext();
-    if (diff < -50) handlePrev();
+  const slideVariants = {
+    enter:  d => ({ opacity: 0, x: d > 0 ? 60 : -60 }),
+    center: { opacity: 1, x: 0, transition: { duration: 0.7, ease: [0.4, 0, 0.2, 1] } },
+    exit:   d => ({ opacity: 0, x: d > 0 ? -40 : 40, transition: { duration: 0.5 } })
   };
 
   if (!banners || banners.length === 0) return null;
-
-  const currentBanner = banners[currentIndex] || banners[0];
+  const b = banners[currentIndex] || banners[0];
 
   return (
     <div
-      className="relative w-full h-[520px] sm:h-[600px] overflow-hidden bg-[#0A0A0D] border-b border-[#282834]"
+      ref={heroRef}
+      /* ── True full-screen: seamlessly fits behind transparent fixed navbar ── */
+      className="relative w-full overflow-hidden bg-[#FAF8F4] dark:bg-[#060608] transition-colors duration-400"
+      style={{
+        height: '100svh',
+        minHeight: 560,
+        maxHeight: 900,
+      }}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
+      onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
+      onTouchMove={e => { touchEndX.current = e.touches[0].clientX; }}
+      onTouchEnd={() => {
+        const d = touchStartX.current - touchEndX.current;
+        if (Math.abs(d) > 40) { d > 0 ? goNext() : goPrev(); }
+      }}
     >
-      {/* GLOBAL HERO BACKGROUND VIDEO LAYER (Replace videoUrl or source src file) */}
-      <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="w-full h-full object-cover opacity-40 filter brightness-70 contrast-125 scale-105"
-          poster={currentBanner.imageUrl}
-        >
-          <source src={videoUrl || "https://assets.mixkit.co/videos/preview/mixkit-fire-flames-floating-in-the-dark-41525-large.mp4"} type="video/mp4" />
+      {/* Background fire video */}
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-20 dark:opacity-30">
+        <video autoPlay loop muted playsInline
+          className="w-full h-full object-cover mix-blend-screen"
+          poster={b.imageUrl}>
+          <source src={videoUrl || 'https://assets.mixkit.co/videos/preview/mixkit-fire-flames-floating-in-the-dark-41525-large.mp4'} type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0F0F12] via-[#0F0F12]/85 to-[#0F0F12]/60" />
       </div>
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentBanner._id || currentIndex}
-          initial={{ opacity: 0, scale: 1.05 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.98 }}
-          transition={{ duration: 0.7, ease: 'easeOut' }}
-          className="absolute inset-0 w-full h-full z-1"
-        >
-          {/* BANNER BACKGROUND IMAGE WITH OVERLAY */}
-          <img
-            src={currentBanner.imageUrl}
-            alt={currentBanner.title}
-            className="w-full h-full object-cover object-center filter brightness-60 contrast-110 opacity-70"
-          />
+      {/* Parallax slide */}
+      <AnimatePresence custom={direction} mode="wait">
+        <motion.div key={b._id || currentIndex} custom={direction}
+          variants={slideVariants} initial="enter" animate="center" exit="exit"
+          className="absolute inset-0 z-1">
+          <motion.div style={{ y: parallaxY, scale: scaleImg }} className="absolute inset-0">
+            <img src={b.imageUrl} alt={b.title}
+              className="w-full h-full object-cover object-center transition-all duration-500"
+              style={{ filter: isDark ? 'brightness(0.45) contrast(1.1) saturate(1.1)' : 'brightness(0.92) contrast(1.05) saturate(1.05)' }} />
+          </motion.div>
 
-          {/* GRADIENT OVERLAYS */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0F0F12] via-[#0F0F12]/75 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0F0F12] via-transparent to-transparent" />
+          {/* Theme-aware Overlays */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#FAF8F4] via-[#FAF8F4]/80 to-transparent dark:from-[#060608] dark:via-[#060608]/75 dark:to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#FAF8F4]/90 via-transparent to-transparent dark:from-[#060608]/80 dark:via-transparent dark:to-transparent" />
 
-          {/* OVERLAY CONTENT CONTAINER */}
-          <div className="absolute inset-0 max-w-7xl mx-auto px-6 sm:px-8 flex flex-col justify-center text-left space-y-6 z-10">
-            
-            {/* DISCOUNT BADGE */}
-            {currentBanner.discountPercentage > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: -15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E85D3D]/20 border border-[#E85D3D]/50 text-xs font-black uppercase text-[#E85D3D] shadow-flame-glow self-start"
-              >
-                <Tag className="w-4 h-4 text-[#FF7A00]" />
-                <span>FLAME DEAL — {currentBanner.discountPercentage}% OFF</span>
-              </motion.div>
-            )}
-
-            {/* TITLE */}
-            <motion.h1
-              initial={{ opacity: 0, y: 25 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-              className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white max-w-3xl leading-[1.08]"
-            >
-              {currentBanner.title}
-            </motion.h1>
-
-            {/* DESCRIPTION */}
-            {currentBanner.description && (
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="text-base sm:text-lg text-gray-300 max-w-xl font-normal leading-relaxed"
-              >
-                {currentBanner.description}
-              </motion.p>
-            )}
-
-            {/* CTA BUTTON */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="pt-2"
-            >
-              <Link
-                to={currentBanner.ctaLink || '/shop'}
-                className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-[#D9480F] via-[#E85D3D] to-[#FF7A00] hover:from-[#E85D3D] hover:to-[#FF7A00] text-white font-extrabold text-sm rounded-2xl shadow-flame-glow hover:shadow-flame-intense transition-all active:scale-95 group"
-              >
-                <span>{currentBanner.ctaText || 'SHOP NOW'}</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </motion.div>
-
-          </div>
+          {/* Accent bottom glow */}
+          <div className="absolute bottom-0 left-0 right-0 h-64 pointer-events-none"
+            style={{ background: `radial-gradient(ellipse 60% 80% at 20% 100%, ${b.accent || '#E85D3D'}20 0%, transparent 70%)` }} />
         </motion.div>
       </AnimatePresence>
 
-      {/* MANUAL NAVIGATION ARROWS */}
-      <button
-        onClick={handlePrev}
-        aria-label="Previous Slide"
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-[#18181F]/80 text-white hover:bg-[#E85D3D] border border-[#282834] transition-all hidden sm:flex items-center justify-center shadow-lg"
+      {/* ── Content — vertically centered, pt-16 clears transparent navbar ── */}
+      <motion.div
+        className="absolute inset-0 z-10 flex flex-col justify-center px-5 sm:px-10 lg:px-16 pt-16 pb-8"
+        style={{ opacity: contentOpacity }}
       >
-        <ChevronLeft className="w-6 h-6" />
-      </button>
+        {/* Progress row */}
+        <div className="flex items-center gap-3 mb-5">
+          <span className="text-xs font-black text-[#E85D3D] tabular-nums">
+            {String(currentIndex + 1).padStart(2, '0')}
+          </span>
+          <div className="flex items-center gap-1.5">
+            {banners.map((_, i) => (
+              <motion.button key={i}
+                onClick={() => { setDirection(i > currentIndex ? 1 : -1); setCurrentIndex(i); }}
+                className="relative h-0.5 rounded-full overflow-hidden bg-black/20 dark:bg-white/20"
+                animate={{ width: i === currentIndex ? 36 : 10 }}
+                transition={{ duration: 0.35 }}
+                aria-label={`Slide ${i + 1}`}
+              >
+                {i === currentIndex && (
+                  <motion.div className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#E85D3D] to-[#FF7A00]"
+                    initial={{ width: '0%' }} animate={{ width: '100%' }}
+                    transition={{ duration: 5.5, ease: 'linear' }} />
+                )}
+              </motion.button>
+            ))}
+          </div>
+          <span className="text-xs font-bold text-[#7A7A7A] dark:text-white/30 tabular-nums">
+            {String(banners.length).padStart(2, '0')}
+          </span>
 
-      <button
-        onClick={handleNext}
-        aria-label="Next Slide"
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-[#18181F]/80 text-white hover:bg-[#E85D3D] border border-[#282834] transition-all hidden sm:flex items-center justify-center shadow-lg"
-      >
-        <ChevronRight className="w-6 h-6" />
-      </button>
+          {b.discountPercentage > 0 && (
+            <motion.span key={`badge-${currentIndex}`}
+              initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+              className="badge-flame flex items-center gap-1 ml-1">
+              <Tag className="w-3 h-3" /> {b.discountPercentage}% OFF
+            </motion.span>
+          )}
+        </div>
 
-      {/* NAVIGATION DOTS */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
-        {banners.map((_, idx) => (
-          <button
-            key={idx}
-            onClick={() => setCurrentIndex(idx)}
-            className={`h-2.5 rounded-full transition-all duration-300 ${
-              currentIndex === idx
-                ? 'w-8 bg-gradient-to-r from-[#E85D3D] to-[#FF7A00] shadow-flame-glow'
-                : 'w-2.5 bg-gray-600/70 hover:bg-gray-400'
-            }`}
-            aria-label={`Go to slide ${idx + 1}`}
-          />
-        ))}
-      </div>
+        {/* Title — overflow-hidden wrapper prevents clipping */}
+        <div className="overflow-hidden mb-1">
+          <AnimatePresence mode="wait">
+            <motion.h1 key={`title-${currentIndex}`}
+              initial={{ y: '105%' }} animate={{ y: 0 }} exit={{ y: '-105%' }}
+              transition={{ duration: 0.65, ease: [0.76, 0, 0.24, 1] }}
+              /* ── Responsive: clamp prevents overflow on desktop ── */
+              className="font-black leading-[0.9] tracking-tight text-[#1C1C1C] dark:text-white uppercase"
+              style={{ fontSize: 'clamp(2.4rem, 8vw, 5.5rem)', wordBreak: 'break-word', hyphens: 'auto' }}
+            >
+              {b.title}
+            </motion.h1>
+          </AnimatePresence>
+        </div>
+
+        {/* Subtitle */}
+        <div className="overflow-hidden mb-4">
+          <AnimatePresence mode="wait">
+            <motion.span key={`sub-${currentIndex}`}
+              initial={{ y: '105%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '-105%', opacity: 0 }}
+              transition={{ duration: 0.6, delay: 0.07, ease: [0.76, 0, 0.24, 1] }}
+              className="block font-black tracking-[0.1em] uppercase text-flame-gradient"
+              style={{ fontSize: 'clamp(0.85rem, 3vw, 1.5rem)' }}
+            >
+              {b.subtitle}
+            </motion.span>
+          </AnimatePresence>
+        </div>
+
+        {/* Description — hidden on very small mobile */}
+        <AnimatePresence mode="wait">
+          <motion.p key={`desc-${currentIndex}`}
+            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.4, delay: 0.18 }}
+            className="hidden sm:block text-sm text-[#4A4A4A] dark:text-white/55 leading-relaxed max-w-sm mb-6 font-medium">
+            {b.description}
+          </motion.p>
+        </AnimatePresence>
+        {/* Smaller desc for mobile */}
+        <AnimatePresence mode="wait">
+          <motion.p key={`desc-mob-${currentIndex}`}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.4, delay: 0.18 }}
+            className="sm:hidden text-xs text-[#4A4A4A] dark:text-white/50 leading-relaxed mb-5 max-w-[80%] font-medium">
+            {b.description}
+          </motion.p>
+        </AnimatePresence>
+
+        {/* CTAs */}
+        <AnimatePresence mode="wait">
+          <motion.div key={`cta-${currentIndex}`}
+            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.35, delay: 0.25 }}
+            className="flex items-center gap-3 flex-wrap">
+            <Link to={b.ctaLink || '/shop'}
+              className="inline-flex items-center gap-2 px-6 py-3.5 sm:px-7 sm:py-4 bg-gradient-to-r from-[#C94A20] via-[#E85D3D] to-[#FF7A00] text-white font-black text-xs sm:text-sm tracking-wide rounded-2xl shadow-flame-glow hover:shadow-flame-intense transition-all hover:-translate-y-0.5 active:scale-95 group">
+              <span>{b.ctaText || 'SHOP NOW'}</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+            <Link to="/shop"
+              className="inline-flex items-center gap-1.5 px-4 py-3.5 text-[#1C1C1C] dark:text-white/65 hover:text-[#E85D3D] dark:hover:text-white text-xs font-bold border border-[#DDD9D0] dark:border-white/15 hover:border-[#E85D3D]/30 rounded-2xl backdrop-blur-sm bg-white/50 dark:bg-white/5 transition-all">
+              <Flame className="w-3.5 h-3.5 text-[#E85D3D]" /> Browse All
+            </Link>
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
+
+      {/* Scroll hint — desktop only */}
+      <motion.div className="absolute bottom-8 right-6 z-20 hidden lg:flex flex-col items-center gap-2"
+        animate={{ opacity: [0.3, 0.8, 0.3] }} transition={{ duration: 2.5, repeat: Infinity }}>
+        <div className="w-px h-12 bg-gradient-to-b from-black/25 dark:from-white/25 to-transparent" />
+        <span className="text-[9px] text-[#7A7A7A] dark:text-white/30 font-bold uppercase tracking-[0.2em]" style={{ writingMode: 'vertical-rl' }}>scroll</span>
+      </motion.div>
+
+      {/* Nav arrows — desktop */}
+      {banners.length > 1 && (<>
+        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={goPrev}
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-white/80 dark:bg-white/8 text-[#1C1C1C] dark:text-white hover:bg-[#E85D3D] hover:text-white dark:hover:bg-[#E85D3D] border border-[#DDD9D0] dark:border-white/12 transition-all hidden sm:flex items-center justify-center backdrop-blur-md shadow-md">
+          <ChevronLeft className="w-5 h-5" />
+        </motion.button>
+        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={goNext}
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-white/80 dark:bg-white/8 text-[#1C1C1C] dark:text-white hover:bg-[#E85D3D] hover:text-white dark:hover:bg-[#E85D3D] border border-[#DDD9D0] dark:border-white/12 transition-all hidden sm:flex items-center justify-center backdrop-blur-md shadow-md">
+          <ChevronRight className="w-5 h-5" />
+        </motion.button>
+      </>)}
+
+      {/* Page fade */}
+      <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[var(--bg-base)] to-transparent z-20 pointer-events-none" />
     </div>
   );
 };

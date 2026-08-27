@@ -1,29 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
   <defs>
-    <linearGradient id="flameGrad1" x1="0%" y1="100%" x2="50%" y2="0%">
-      <stop offset="0%" stop-color="#D9480F" />
-      <stop offset="50%" stop-color="#E85D3D" />
-      <stop offset="100%" stop-color="#FF7A00" />
+    <!-- Left flame gradient: orange-red -->
+    <linearGradient id="lf" x1="30" y1="8" x2="30" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF7A00"/>
+      <stop offset="55%" stop-color="#E85D3D"/>
+      <stop offset="100%" stop-color="#D9480F"/>
     </linearGradient>
-    <linearGradient id="flameGrad2" x1="50%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#E85D3D" />
-      <stop offset="70%" stop-color="#FF3D00" />
-      <stop offset="100%" stop-color="#FFC107" />
+    <!-- Right flame gradient: orange-yellow -->
+    <linearGradient id="rf" x1="88" y1="8" x2="88" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFD166"/>
+      <stop offset="40%" stop-color="#FF9A00"/>
+      <stop offset="100%" stop-color="#E85D3D"/>
     </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="3" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-    </filter>
   </defs>
-  <!-- Background Circle -->
-  <rect width="100" height="100" rx="24" fill="#121216"/>
-  
-  <!-- Left Flame -->
-  <path d="M 38 82 C 22 75 16 56 25 40 C 28 35 34 30 33 22 C 45 32 50 48 44 64 C 42 70 41 78 38 82 Z" fill="url(#flameGrad1)" filter="url(#glow)"/>
-  
-  <!-- Right Flame -->
-  <path d="M 62 82 C 78 75 84 56 75 40 C 72 35 66 30 67 22 C 55 32 50 48 56 64 C 58 70 59 78 62 82 Z" fill="url(#flameGrad2)" filter="url(#glow)"/>
-  
-  <!-- Center Core Flame Fusion -->
-  <path d="M 50 78 C 42 70 45 56 50 46 C 55 56 58 70 50 78 Z" fill="#FFD166"/>
+
+  <!-- Dark rounded background -->
+  <rect width="120" height="120" rx="26" fill="#111116"/>
+
+  <!-- LEFT FLAME body -->
+  <path d="M36 100 C18 100 7 84 7 66 C7 48 17 36 24 26 C24 26 22 40 30 46 C30 32 37 18 46 8 C46 8 40 28 50 36 C56 40 59 50 56 60 C60 52 60 42 56 32 C66 42 70 56 66 70 C63 80 55 90 44 96 C41 98 39 100 36 100Z" fill="url(#lf)"/>
+  <!-- LEFT FLAME inner curl detail -->
+  <path d="M44 100 C44 100 50 88 44 80 C40 74 44 66 50 66 C46 74 48 84 54 90 C50 94 46 98 44 100Z" fill="#0A0A0D" opacity="0.28"/>
+
+  <!-- RIGHT FLAME body -->
+  <path d="M84 100 C66 100 55 84 55 66 C55 48 65 36 72 26 C72 26 70 40 78 46 C78 32 85 18 94 8 C94 8 88 28 98 36 C104 40 107 50 104 60 C108 52 108 42 104 32 C114 42 118 56 114 70 C111 80 103 90 92 96 C89 98 87 100 84 100Z" fill="url(#rf)"/>
+  <!-- RIGHT FLAME inner curl detail -->
+  <path d="M92 100 C92 100 98 88 92 80 C88 74 92 66 98 66 C94 74 96 84 102 90 C98 94 94 98 92 100Z" fill="#0A0A0D" opacity="0.22"/>
 </svg>

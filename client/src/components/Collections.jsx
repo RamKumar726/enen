@@ -1,141 +1,157 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowRight, Flame, Sparkles, Zap, Shield, Award } from 'lucide-react';
+import { motion, useInView } from 'framer-motion';
+import { ArrowRight, Flame, ArrowUpRight } from 'lucide-react';
 
-const animeCollectionsData = [
-  {
-    id: 'one-piece',
-    name: 'One Piece Collection',
-    value: 'One Piece',
-    subtitle: 'Warrior of Liberation',
-    count: '4 Designs',
-    description: 'Luffy Gear 5, Roronoa Zoro Swordmaster, Sanji Diable Jambe & Chopper Monster Point.',
-    image: 'https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?auto=format&fit=crop&w=800&q=80',
-    badge: 'Popular Collection',
-    color: 'from-[#D9480F] to-[#E85D3D]'
-  },
-  {
-    id: 'demon-slayer',
-    name: 'Demon Slayer Collection',
-    value: 'Demon Slayer',
-    subtitle: 'Hinokami Flame Art',
-    count: '4 Designs',
-    description: 'Tanjiro Sun Breathing, Nezuko Demon Form, Nine Hashira Squad & Muzan Demon King.',
-    image: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?auto=format&fit=crop&w=800&q=80',
-    badge: 'Trending Drop',
-    color: 'from-[#E85D3D] to-[#FF7A00]'
-  },
-  {
-    id: 'naruto',
-    name: 'Naruto Collection',
-    value: 'Naruto',
-    subtitle: 'Kurama Chakra Seal',
-    count: '3 Designs',
-    description: 'Naruto Sage Mode, Sasuke Rinnegan Susanoo & Kakashi Sharingan Raikiri.',
-    image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80',
-    badge: 'Classic Shonen',
-    color: 'from-[#FF7A00] to-[#FFC107]'
-  },
-  {
-    id: 'attack-on-titan',
-    name: 'Attack on Titan Collection',
-    value: 'Attack on Titan',
-    subtitle: 'Freedom Wings Squad',
-    count: '4 Designs',
-    description: 'Eren Founder Titan, Levi Ackerman Blades, Mikasa Red Scarf & Colossal Titan Steam.',
-    image: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=800&q=80',
-    badge: 'Limited Edition',
-    color: 'from-[#D9480F] to-[#2C2C2C]'
-  },
-  {
-    id: 'my-hero-academia',
-    name: 'My Hero Academia Collection',
-    value: 'My Hero Academia',
-    subtitle: 'Plus Ultra Heroes',
-    count: '3 Designs',
-    description: 'Deku One For All Full Cowl, Bakugo Howitzer Explosion & All Might Symbol of Peace.',
-    image: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=800&q=80',
-    badge: 'Hero Exclusive',
-    color: 'from-[#E85D3D] to-[#3B82F6]'
-  }
+const collections = [
+  { id: 'one-piece',        name: 'One Piece',         value: 'One Piece',        subtitle: 'Warrior of Liberation', count: 4, image: 'https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?auto=format&fit=crop&w=700&q=80', badge: 'Popular',       accent: '#E85D3D', icon: '⚓' },
+  { id: 'demon-slayer',     name: 'Demon Slayer',      value: 'Demon Slayer',     subtitle: 'Hinokami Flame Art',   count: 4, image: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=700&q=80', badge: 'Trending',      accent: '#FF7A00', icon: '🗡️' },
+  { id: 'naruto',           name: 'Naruto',            value: 'Naruto',           subtitle: 'Kurama Chakra',        count: 3, image: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?auto=format&fit=crop&w=700&q=80', badge: 'Classic',       accent: '#F59E0B', icon: '🍃' },
+  { id: 'attack-on-titan',  name: 'Attack on Titan',  value: 'Attack on Titan',  subtitle: 'Freedom Wings',        count: 4, image: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=700&q=80', badge: 'Limited',       accent: '#94A3B8', icon: '🛡️' },
+  { id: 'my-hero-academia', name: 'My Hero Academia', value: 'My Hero Academia', subtitle: 'Plus Ultra Heroes',    count: 3, image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=700&q=80', badge: 'Hero Exclusive', accent: '#60A5FA', icon: '✊' },
 ];
 
-const Collections = () => {
+const CollectionCard = ({ item, index }) => {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: '-40px' });
+
   return (
-    <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8">
-      
-      {/* SECTION HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-[#282834] pb-4">
-        <div>
-          <div className="inline-flex items-center gap-2 text-xs font-extrabold text-[#E85D3D] uppercase tracking-widest mb-1">
-            <Flame className="w-4 h-4" />
-            <span>OFFICIAL ANIME VAULTS</span>
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white">
-            CHOOSE YOUR <span className="text-flame-gradient">ANIME CLAN</span>
-          </h2>
-        </div>
-        <p className="text-xs text-gray-400 font-semibold mt-2 sm:mt-0">
-          Swipe horizontally on mobile to explore collections
-        </p>
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 40 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.55, delay: index * 0.08, ease: [0.4, 0, 0.2, 1] }}
+      whileHover={{ y: -6 }}
+      className="group relative rounded-2xl sm:rounded-3xl overflow-hidden cursor-pointer"
+      style={{ height: 'clamp(220px, 38vw, 400px)' }}
+    >
+      {/* Image */}
+      <motion.img
+        src={item.image} alt={item.name}
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{ filter: 'brightness(0.45) saturate(1.1)' }}
+        whileHover={{ scale: 1.07 }}
+        transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+      />
+
+      {/* Gradient */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/25 to-transparent opacity-85" />
+
+      {/* Accent hover glow */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+        style={{ background: `radial-gradient(ellipse at 50% 100%, ${item.accent}28 0%, transparent 65%)` }} />
+
+      {/* Badge */}
+      <div className="absolute top-2.5 left-2.5 z-10">
+        <span className="px-2 py-0.5 text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-white rounded-lg"
+          style={{ background: item.accent + 'DD' }}>
+          {item.badge}
+        </span>
       </div>
 
-      {/* HORIZONTAL SWIPE CONTAINER ON MOBILE / GRID ON DESKTOP */}
-      <div className="flex sm:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-x-auto pb-4 sm:pb-0 snap-x snap-mandatory scrollbar-none">
-        {animeCollectionsData.map((item, index) => (
+      {/* Count */}
+      <div className="absolute top-2.5 right-2.5 z-10">
+        <span className="px-2 py-0.5 text-[9px] font-bold text-white/65 bg-black/45 backdrop-blur rounded-lg">
+          {item.count}
+        </span>
+      </div>
+
+      {/* Floating emoji */}
+      <motion.div
+        animate={{ y: [0, -6, 0] }}
+        transition={{ duration: 4 + index * 0.4, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute top-9 right-2.5 text-2xl sm:text-3xl opacity-50 group-hover:opacity-80 transition-opacity z-10"
+      >
+        {item.icon}
+      </motion.div>
+
+      {/* Content */}
+      <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-5 z-10">
+        <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-[0.12em] block mb-0.5" style={{ color: item.accent }}>
+          {item.subtitle}
+        </span>
+        <h3 className="text-base sm:text-xl font-black text-white leading-tight mb-2 sm:mb-3">
+          {item.name}
+        </h3>
+        <Link
+          to={`/collection/${encodeURIComponent(item.value)}`}
+          className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-extrabold text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl border border-white/20 backdrop-blur-sm transition-all"
+          style={{ background: `${item.accent}CC` }}
+          onClick={e => e.stopPropagation()}
+        >
+          Explore <ArrowUpRight className="w-3 h-3" />
+        </Link>
+
+        {/* Bottom accent line */}
+        <div className="absolute bottom-0 left-0 right-0 h-px opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+          style={{ background: `linear-gradient(90deg, transparent, ${item.accent}, transparent)` }} />
+      </div>
+    </motion.div>
+  );
+};
+
+const Collections = () => {
+  const headerRef = useRef(null);
+  const headerInView = useInView(headerRef, { once: true });
+
+  return (
+    <section className="py-10 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+
+      {/* Header */}
+      <div ref={headerRef} className="flex items-end justify-between mb-6 sm:mb-8">
+        <div>
           <motion.div
-            key={item.id}
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: index * 0.1 }}
-            viewport={{ once: true }}
-            className="flex-shrink-0 w-80 sm:w-auto snap-center group relative h-96 rounded-3xl overflow-hidden border border-[#282834] hover:border-[#E85D3D]/60 shadow-xl hover:shadow-flame-glow transition-all flex flex-col justify-end p-6"
+            initial={{ opacity: 0, x: -16 }} animate={headerInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.5 }}
+            className="flex items-center gap-2 mb-2"
           >
-            {/* BACKGROUND IMAGE */}
-            <img
-              src={item.image}
-              alt={item.name}
-              className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 filter brightness-75 contrast-105"
-            />
-
-            {/* GRADIENT OVERLAY */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0F0F12] via-[#0F0F12]/60 to-transparent" />
-
-            {/* CONTENT */}
-            <div className="relative z-10 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className={`px-2.5 py-1 bg-gradient-to-r ${item.color} text-white font-extrabold text-[10px] uppercase tracking-wider rounded-lg shadow-md`}>
-                  {item.badge}
-                </span>
-                <span className="px-2 py-0.5 bg-[#18181F]/90 text-gray-300 text-[10px] font-bold rounded-full border border-[#282834]">
-                  {item.count}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-[10px] uppercase font-bold text-[#FF7A00] tracking-wider block">{item.subtitle}</span>
-                <h3 className="text-2xl font-extrabold text-white group-hover:text-flame-gradient transition-colors">
-                  {item.name}
-                </h3>
-              </div>
-
-              <p className="text-xs text-gray-300 line-clamp-2 leading-relaxed">
-                {item.description}
-              </p>
-
-              <Link
-                to={`/collection/${encodeURIComponent(item.value)}`}
-                className="inline-flex items-center gap-2 text-xs font-extrabold text-white bg-[#E85D3D] hover:bg-[#FF7A00] px-4 py-2.5 rounded-xl transition-all shadow-md mt-1 group-hover:shadow-flame-glow"
-              >
-                <span>View {item.name}</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </div>
+            <div className="w-6 h-px bg-gradient-to-r from-[#E85D3D] to-transparent" />
+            <Flame className="w-3.5 h-3.5 text-[#E85D3D]" />
+            <span className="text-[9px] sm:text-[10px] font-extrabold text-[#E85D3D] uppercase tracking-[0.2em]">
+              Official Anime Vaults
+            </span>
           </motion.div>
+
+          <div className="overflow-hidden">
+            <motion.h2
+              initial={{ y: '110%' }} animate={headerInView ? { y: 0 } : {}}
+              transition={{ duration: 0.65, ease: [0.76, 0, 0.24, 1] }}
+              className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#1C1C1C] dark:text-white"
+            >
+              CHOOSE YOUR{' '}
+              <span className="text-flame-gradient">CLAN</span>
+            </motion.h2>
+          </div>
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0 }} animate={headerInView ? { opacity: 1 } : {}}
+          transition={{ delay: 0.3 }}
+        >
+          <Link to="/shop"
+            className="flex items-center gap-1.5 text-xs font-bold text-[#E85D3D] hover:text-[#FF7A00] transition-colors group">
+            View All
+            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </motion.div>
+      </div>
+
+      {/* ── 2-col grid on mobile, 3-col on md, 5-col on xl ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        {/* First card spans 2 rows on desktop for visual hierarchy */}
+        {collections.map((item, i) => (
+          <div key={item.id} className={i === 0 ? 'row-span-1 sm:row-span-1' : ''}>
+            <CollectionCard item={item} index={i} />
+          </div>
         ))}
       </div>
 
+      {/* Dot indicators on mobile */}
+      <div className="flex justify-center mt-4 gap-1.5 sm:hidden">
+        {collections.map((_, i) => (
+          <div key={i} className="w-1.5 h-1.5 rounded-full bg-[#DDD9D0] dark:bg-[#252530]" />
+        ))}
+      </div>
     </section>
   );
 };

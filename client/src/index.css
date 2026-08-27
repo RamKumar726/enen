@@ -1,88 +1,691 @@
+/* ========================================
+   ENEN — PREMIUM DESIGN SYSTEM v3.0
+   UNLEASH THE BLAZE — HIGH CLASS EDITION
+======================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   CSS CUSTOM PROPERTIES — LIGHT & DARK TOKENS
+============================================================ */
+:root {
+  --bg-base:        #FAF8F4;
+  --bg-mid:         #F2EFE8;
+  --bg-card:        #FFFFFF;
+  --bg-elevated:    #F7F4EE;
+  --bg-hover:       #EDE9E0;
+  --border-subtle:  #EAE6DD;
+  --border-default: #DDD9D0;
+  --border-strong:  #C9C4B8;
+  --text-primary:   #1C1C1C;
+  --text-secondary: #4A4A4A;
+  --text-muted:     #7A7A7A;
+  --text-faint:     #A8A8A8;
+  --grain-opacity:  0.025;
+  --navbar-height:  64px;
+}
+
+.dark {
+  --bg-base:        #060608;
+  --bg-mid:         #0D0D10;
+  --bg-card:        #111116;
+  --bg-elevated:    #18181F;
+  --bg-hover:       #1E1E28;
+  --border-subtle:  #17171F;
+  --border-default: #252530;
+  --border-strong:  #363648;
+  --text-primary:   #F0EDE8;
+  --text-secondary: #C8C4BE;
+  --text-muted:     #888890;
+  --text-faint:     #48484E;
+  --grain-opacity:  0.045;
+}
+
+/* ============================================================
+   BASE STYLES
+============================================================ */
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
-    @apply bg-[#0F0F12] text-[#F5F1EB] font-sans antialiased overflow-x-hidden;
+    @apply antialiased overflow-x-hidden;
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display tracking-tight;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
   }
+
+  /* Hide scrollbar on body when drawer is open */
+  body.no-scroll { overflow: hidden; }
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* ============================================================
+   GRAIN TEXTURE OVERLAY — PREMIUM FEEL
+============================================================ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+  animation: grainShift 0.3s steps(1) infinite;
 }
-::-webkit-scrollbar-track {
-  background: #0F0F12;
+
+@keyframes grainShift {
+  0%   { transform: translate(0, 0); }
+  10%  { transform: translate(-2%, -4%); }
+  20%  { transform: translate(-6%, 2%); }
+  30%  { transform: translate(3%, -1%); }
+  40%  { transform: translate(-2%, 6%); }
+  50%  { transform: translate(-5%, 0%); }
+  60%  { transform: translate(2%, 3%); }
+  70%  { transform: translate(0%, -3%); }
+  80%  { transform: translate(-3%, 2%); }
+  90%  { transform: translate(4%, 1%); }
+  100% { transform: translate(1%, 0); }
 }
+
+/* ============================================================
+   SCROLLBAR
+============================================================ */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
 ::-webkit-scrollbar-thumb {
-  background: #282834;
-  border-radius: 4px;
+  background: linear-gradient(180deg, #E85D3D, #FF7A00);
+  border-radius: 99px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #E85D3D;
-}
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Glassmorphism */
-.glass-panel {
-  background: rgba(24, 24, 31, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
+/* ============================================================
+   GLASSMORPHISM — THEME AWARE
+============================================================ */
 .glass-nav {
-  background: rgba(15, 15, 18, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(232, 93, 61, 0.15);
+  background: rgba(250, 248, 244, 0.88);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+.dark .glass-nav {
+  background: rgba(6, 6, 8, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-/* Fire Glowing Gradient Text */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+.dark .glass-panel {
+  background: rgba(13, 13, 16, 0.75);
+  backdrop-filter: blur(24px) saturate(160%);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+.dark .glass-card {
+  background: rgba(17, 17, 22, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.glass-intense {
+  background: rgba(250, 248, 244, 0.98);
+  backdrop-filter: blur(48px) saturate(220%);
+}
+.dark .glass-intense {
+  background: rgba(10, 10, 13, 0.98);
+}
+
+/* ============================================================
+   GRADIENT TEXT
+============================================================ */
 .text-flame-gradient {
-  background: linear-gradient(135deg, #FFF 0%, #FF7A00 40%, #E85D3D 70%, #D9480F 100%);
+  background: linear-gradient(135deg, #C94A20 0%, #E85D3D 35%, #FF7A00 65%, #FFB347 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.dark .text-flame-gradient {
+  background: linear-gradient(135deg, #FFFFFF 0%, #FFD166 25%, #FF9A00 55%, #E85D3D 80%, #C94A20 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
+/* Metallic gold gradient */
 .text-gold-gradient {
-  background: linear-gradient(135deg, #FFF 0%, #FFD166 50%, #E85D3D 100%);
+  background: linear-gradient(135deg, #8B5E00 0%, #D4860A 40%, #FFD166 60%, #C9820A 80%, #8B5E00 100%);
+  background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: metallicSheen 4s linear infinite;
 }
 
-/* Glowing Flame Border */
-.border-flame-glow {
-  box-shadow: 0 0 15px rgba(232, 93, 61, 0.3);
-  border-color: rgba(232, 93, 61, 0.6);
+.text-shimmer {
+  background: linear-gradient(
+    100deg,
+    #C94A20 0%, #E85D3D 15%, #FF9A00 30%,
+    #FFD166 45%, #FF9A00 60%, #E85D3D 75%, #C94A20 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmerText 3s linear infinite;
 }
 
-/* Card Hover Transition */
+/* Pastel gradient for light mode headings */
+.text-brand {
+  color: var(--text-primary);
+}
+
+/* ============================================================
+   SHADOW SYSTEM
+============================================================ */
+.shadow-flame-glow {
+  box-shadow: 0 0 24px rgba(232, 93, 61, 0.4), 0 4px 24px rgba(0,0,0,0.12);
+}
+.dark .shadow-flame-glow {
+  box-shadow: 0 0 28px rgba(232, 93, 61, 0.45), 0 4px 24px rgba(0,0,0,0.5);
+}
+.shadow-flame-intense {
+  box-shadow: 0 0 48px rgba(255, 122, 0, 0.55), 0 8px 36px rgba(0,0,0,0.2);
+}
+.shadow-card {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+}
+.dark .shadow-card {
+  box-shadow: 0 4px 28px rgba(0,0,0,0.5), 0 1px 6px rgba(0,0,0,0.4);
+}
+.shadow-elevated {
+  box-shadow: 0 8px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+}
+.dark .shadow-elevated {
+  box-shadow: 0 16px 60px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.5);
+}
+
+/* ============================================================
+   MESH GRADIENT BACKGROUNDS
+============================================================ */
+.mesh-bg-dark {
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 20%, rgba(232, 93, 61, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 90% 80%, rgba(255, 122, 0, 0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(201, 74, 32, 0.03) 0%, transparent 70%),
+    #060608;
+}
+
+.mesh-bg-light {
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 20%, rgba(232, 93, 61, 0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 90% 80%, rgba(255, 122, 0, 0.03) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(201, 74, 32, 0.02) 0%, transparent 70%),
+    #FAF8F4;
+}
+
+.section-gradient-top {
+  background: linear-gradient(180deg, var(--bg-base) 0%, transparent 100%);
+}
+.section-gradient-bottom {
+  background: linear-gradient(0deg, var(--bg-base) 0%, transparent 100%);
+}
+
+/* Animated aurora mesh for hero sections */
+.aurora-mesh {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.aurora-mesh::before {
+  content: '';
+  position: absolute;
+  width: 80vw;
+  height: 80vh;
+  top: -20%;
+  left: -10%;
+  background: radial-gradient(ellipse, rgba(232, 93, 61, 0.12) 0%, transparent 65%);
+  animation: auroraFloat1 8s ease-in-out infinite alternate;
+  border-radius: 50%;
+  filter: blur(60px);
+}
+.aurora-mesh::after {
+  content: '';
+  position: absolute;
+  width: 60vw;
+  height: 60vh;
+  bottom: -10%;
+  right: -5%;
+  background: radial-gradient(ellipse, rgba(255, 122, 0, 0.08) 0%, transparent 65%);
+  animation: auroraFloat2 11s ease-in-out infinite alternate;
+  border-radius: 50%;
+  filter: blur(80px);
+}
+
+@keyframes auroraFloat1 {
+  0%   { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(8%, 12%) scale(1.2); }
+}
+@keyframes auroraFloat2 {
+  0%   { transform: translate(0, 0) scale(1.1); }
+  100% { transform: translate(-6%, -10%) scale(1); }
+}
+
+/* ============================================================
+   PRODUCT CARD SHINE + HOVER EFFECTS
+============================================================ */
 .product-card-shine {
   position: relative;
   overflow: hidden;
+  transform-style: preserve-3d;
+  will-change: transform;
 }
+.product-card-shine::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    125deg,
+    transparent 0%,
+    transparent 40%,
+    rgba(255, 255, 255, 0.04) 45%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 55%,
+    transparent 60%,
+    transparent 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 10;
+  pointer-events: none;
+}
+.product-card-shine:hover::before { opacity: 1; }
+
+/* Sweep shine */
 .product-card-shine::after {
   content: '';
   position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(
-    60deg,
-    transparent 30%,
-    rgba(255, 255, 255, 0.08) 50%,
-    transparent 70%
-  );
-  transform: rotate(30deg) translateY(-100%);
-  transition: transform 0.8s ease-in-out;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%);
+  transform: skewX(-20deg);
+  transition: left 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
+  pointer-events: none;
 }
-.product-card-shine:hover::after {
-  transform: rotate(30deg) translateY(100%);
+.product-card-shine:hover::after { left: 160%; }
+
+/* ============================================================
+   ANIMATED UNDERLINE NAV LINKS
+============================================================ */
+.nav-link-animated {
+  position: relative;
+}
+.nav-link-animated::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  width: 0;
+  height: 1.5px;
+  background: linear-gradient(90deg, #E85D3D, #FF7A00);
+  border-radius: 99px;
+  transform: translateX(-50%);
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.nav-link-animated:hover::after,
+.nav-link-animated.active::after { width: 100%; }
+
+/* ============================================================
+   TICKER / MARQUEE
+============================================================ */
+.ticker-wrap { overflow: hidden; white-space: nowrap; }
+.ticker-inner {
+  display: inline-flex;
+  gap: 0;
+  animation: ticker 30s linear infinite;
+}
+.ticker-inner:hover { animation-play-state: paused; }
+
+/* ============================================================
+   RANGE SLIDER
+============================================================ */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 3px;
+  border-radius: 99px;
+  background: linear-gradient(
+    to right,
+    #E85D3D var(--slider-pct, 50%),
+    var(--border-default) var(--slider-pct, 50%)
+  );
+  outline: none;
+  cursor: pointer;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #E85D3D, #FF7A00);
+  border: 2px solid var(--bg-card);
+  box-shadow: 0 0 12px rgba(232, 93, 61, 0.5);
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
+}
+input[type='range']::-webkit-slider-thumb:hover {
+  transform: scale(1.25);
+  box-shadow: 0 0 20px rgba(255, 122, 0, 0.7);
+}
+
+/* ============================================================
+   BUTTON — MAGNETIC FLAME
+============================================================ */
+.btn-flame {
+  background: linear-gradient(135deg, #C94A20 0%, #E85D3D 50%, #FF7A00 100%);
+  background-size: 200% 200%;
+  background-position: 0% 50%;
+  transition: background-position 0.4s ease, box-shadow 0.3s ease, transform 0.15s ease;
+  color: white;
+  font-weight: 700;
+  border-radius: 14px;
+  position: relative;
+  overflow: hidden;
+}
+.btn-flame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 40%, rgba(255, 255, 255, 0.12) 100%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.btn-flame:hover { background-position: 100% 50%; box-shadow: 0 0 30px rgba(232, 93, 61, 0.55); transform: translateY(-2px); }
+.btn-flame:hover::after { opacity: 1; }
+.btn-flame:active { transform: scale(0.97); }
+
+/* Outline flame button */
+.btn-flame-outline {
+  border: 1.5px solid rgba(232, 93, 61, 0.5);
+  color: #E85D3D;
+  background: transparent;
+  border-radius: 14px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+.btn-flame-outline::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #C94A20, #E85D3D);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.btn-flame-outline:hover { border-color: #E85D3D; color: white; box-shadow: 0 0 20px rgba(232, 93, 61, 0.35); }
+.btn-flame-outline:hover::before { opacity: 1; }
+.btn-flame-outline > * { position: relative; z-index: 1; }
+
+/* ============================================================
+   SCROLL REVEAL UTILITIES
+============================================================ */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1), transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.reveal-on-scroll.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Word-by-word reveal */
+.word-reveal-char {
+  display: inline-block;
+  overflow: hidden;
+}
+.word-reveal-inner {
+  display: inline-block;
+  transform: translateY(110%);
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.word-reveal-char.revealed .word-reveal-inner {
+  transform: translateY(0);
+}
+
+/* Clip reveal from bottom */
+.clip-reveal {
+  clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%);
+  transition: clip-path 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.clip-reveal.revealed {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+}
+
+/* Scale reveal */
+.scale-reveal {
+  opacity: 0;
+  transform: scale(0.88) translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.scale-reveal.revealed {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+/* ============================================================
+   HORIZONTAL SCROLL
+============================================================ */
+.horizontal-scroll-container {
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 1.5rem 0;
+}
+.horizontal-scroll-container::-webkit-scrollbar { display: none; }
+.horizontal-scroll-item {
+  flex-shrink: 0;
+  scroll-snap-align: start;
+}
+
+/* ============================================================
+   SECTION DIVIDERS
+============================================================ */
+.section-divider {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--border-default) 30%, rgba(232, 93, 61, 0.4) 50%, var(--border-default) 70%, transparent 100%);
+}
+
+.section-divider-glow {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(232, 93, 61, 0.0) 10%, rgba(232, 93, 61, 0.8) 50%, rgba(232, 93, 61, 0.0) 90%, transparent 100%);
+  box-shadow: 0 0 12px rgba(232, 93, 61, 0.3);
+}
+
+/* ============================================================
+   ANIMATED BADGE
+============================================================ */
+.badge-flame {
+  background: linear-gradient(135deg, rgba(201, 74, 32, 0.15), rgba(255, 122, 0, 0.1));
+  border: 1px solid rgba(232, 93, 61, 0.35);
+  color: #E85D3D;
+  border-radius: 99px;
+  padding: 4px 12px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  position: relative;
+  overflow: hidden;
+}
+.badge-flame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 122, 0, 0.15) 50%, transparent 100%);
+  transform: translateX(-100%);
+  animation: badgeSheen 3s linear infinite 1s;
+}
+@keyframes badgeSheen {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+/* ============================================================
+   KEYFRAMES
+============================================================ */
+@keyframes shimmerText {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+@keyframes metallicSheen {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33%       { transform: translateY(-10px) rotate(1deg); }
+  66%       { transform: translateY(-4px) rotate(-0.5deg); }
+}
+@keyframes flamePulse {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(232, 93, 61, 0.4)); }
+  50%       { filter: drop-shadow(0 0 20px rgba(255, 122, 0, 0.75)); }
+}
+@keyframes borderGlow {
+  0%, 100% { box-shadow: 0 0 10px rgba(232, 93, 61, 0.25); }
+  50%       { box-shadow: 0 0 28px rgba(255, 122, 0, 0.5); }
+}
+@keyframes ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(32px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.88); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes countUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+@keyframes rotateGlow {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes pulseRing {
+  0%   { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.animate-shimmer { animation: shimmer 1.5s ease-in-out infinite; }
+
+.animate-float        { animation: float 6s ease-in-out infinite; }
+.animate-float-slow   { animation: float 9s ease-in-out infinite; }
+.animate-flame-pulse  { animation: flamePulse 2.5s ease-in-out infinite; }
+.animate-border-glow  { animation: borderGlow 2.5s ease-in-out infinite; }
+.animate-ticker       { animation: ticker 30s linear infinite; }
+.animate-spin-slow    { animation: rotateGlow 10s linear infinite; }
+
+/* ============================================================
+   HERO PARALLAX CONTAINER
+============================================================ */
+.hero-parallax {
+  position: relative;
+  overflow: hidden;
+  will-change: transform;
+}
+.hero-parallax-img {
+  position: absolute;
+  inset: -15%;
+  width: 130%;
+  height: 130%;
+  will-change: transform;
+}
+
+/* ============================================================
+   BENTO GRID
+============================================================ */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(2, 200px);
+  gap: 1rem;
+}
+@media (max-width: 768px) {
+  .bento-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+  }
+}
+.bento-span-2 { grid-column: span 2; grid-row: span 2; }
+.bento-span-col { grid-column: span 2; }
+.bento-span-row { grid-row: span 2; }
+
+/* ============================================================
+   CURSOR GLOW (desktop only)
+============================================================ */
+.cursor-glow {
+  position: fixed;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(232, 93, 61, 0.06) 0%, transparent 70%);
+  transition: opacity 0.3s ease;
+}
+
+/* ============================================================
+   FEATURED SECTION ACCENT LINE
+============================================================ */
+.section-accent-left {
+  position: relative;
+}
+.section-accent-left::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 70%;
+  background: linear-gradient(180deg, transparent, #E85D3D, #FF7A00, transparent);
+  border-radius: 99px;
 }

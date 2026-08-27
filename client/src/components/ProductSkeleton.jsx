@@ -1,28 +1,42 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 
-const ProductSkeleton = ({ count = 4 }) => {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      {Array.from({ length: count }).map((_, index) => (
-        <div 
-          key={index}
-          className="bg-[#18181F] border border-[#282834] rounded-2xl overflow-hidden animate-pulse flex flex-col"
-        >
-          <div className="w-full h-72 bg-[#22222D]" />
-          <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-            <div className="space-y-2">
-              <div className="w-1/3 h-4 bg-[#282834] rounded" />
-              <div className="w-4/5 h-6 bg-[#2D2D3A] rounded" />
-            </div>
-            <div className="flex items-center justify-between pt-2">
-              <div className="w-1/4 h-6 bg-[#E85D3D]/30 rounded" />
-              <div className="w-24 h-9 bg-[#282834] rounded-xl" />
-            </div>
-          </div>
-        </div>
-      ))}
+const SkeletonCard = ({ index }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: index * 0.06 }}
+    className="bg-white dark:bg-[#111116] border border-[#EAE6DD] dark:border-[#1E1E28] rounded-2xl sm:rounded-3xl overflow-hidden"
+  >
+    {/* Image skeleton */}
+    <div className="relative bg-[#F4F1EA] dark:bg-[#0D0D11] animate-pulse" style={{ aspectRatio: '1 / 1.1' }}>
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent animate-shimmer" />
     </div>
-  );
-};
+    {/* Content skeleton */}
+    <div className="p-3 space-y-2.5">
+      <div className="flex items-center justify-between">
+        <div className="h-2 w-20 bg-[#F0EDE8] dark:bg-[#1A1A22] rounded animate-pulse" />
+        <div className="h-2 w-8 bg-[#F0EDE8] dark:bg-[#1A1A22] rounded animate-pulse" />
+      </div>
+      <div className="h-3 w-full bg-[#F0EDE8] dark:bg-[#1A1A22] rounded animate-pulse" />
+      <div className="h-3 w-4/5 bg-[#F0EDE8] dark:bg-[#1A1A22] rounded animate-pulse" />
+      <div className="flex gap-1 pt-1">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="w-6 h-6 bg-[#F0EDE8] dark:bg-[#1A1A22] rounded-lg animate-pulse" />
+        ))}
+      </div>
+      <div className="flex items-center justify-between pt-1.5 border-t border-[#EAE6DD] dark:border-[#1E1E28]">
+        <div className="h-5 w-14 bg-[#F0EDE8] dark:bg-[#1A1A22] rounded animate-pulse" />
+        <div className="h-7 w-14 bg-[#E85D3D]/20 rounded-xl animate-pulse" />
+      </div>
+    </div>
+  </motion.div>
+);
+
+const ProductSkeleton = ({ count = 6 }) => (
+  <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+    {[...Array(count)].map((_, i) => <SkeletonCard key={i} index={i} />)}
+  </div>
+);
 
 export default ProductSkeleton;

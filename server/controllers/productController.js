@@ -604,6 +604,14 @@ exports.addProductReview = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
+    // Check if user has already reviewed this product
+    const alreadyReviewed = product.ratings.find(
+      r => r.userId && r.userId.toString() === req.user.id
+    );
+    if (alreadyReviewed) {
+      return res.status(400).json({ success: false, message: 'You have already reviewed this product' });
+    }
+
     const newReview = {
       userId: req.user.id,
       userName: `${req.user.firstName || 'Anime'} ${req.user.lastName || 'Fan'}`,

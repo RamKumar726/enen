@@ -5,6 +5,8 @@ import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
 import Toast from './components/Toast';
 import ProtectedRoute from './components/ProtectedRoute';
+import CursorGlow from './components/CursorGlow';
+import ScrollTop from './components/ScrollTop';
 
 import Home from './pages/Home';
 import Shop from './pages/Shop';
@@ -58,7 +60,10 @@ function App() {
         <Route
           path="*"
           element={
-            <div className="flex flex-col min-h-screen bg-[#0F0F12] text-[#F5F1EB]">
+            <div className="flex flex-col min-h-screen transition-colors duration-400"
+              style={{ backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)' }}>
+              <CursorGlow />
+              <ScrollTop />
               <Navbar />
               <main className="flex-1">
                 <Routes>

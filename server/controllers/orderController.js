@@ -1,5 +1,6 @@
 const Order = require('../models/Order');
 const Cart = require('../models/Cart');
+const Product = require('../models/Product');
 
 exports.createOrder = async (req, res) => {
   try {
@@ -21,6 +22,38 @@ exports.createOrder = async (req, res) => {
 
     if (!shippingAddress || !shippingAddress.street || !shippingAddress.city) {
       return res.status(400).json({ success: false, message: 'Valid shipping address is required' });
+    }
+
+    // ── Stock Validation ──
+    // Check stock availability for each product before accepting the order
+    const stockErrors = [];
+    const productDocs = [];
+
+    for (const item of products) {
+      if (!item.productId) continue;
+      const product = await Product.findById(item.productId);
+      if (!product) {
+        stockErrors.push(`Product "${item.name}" no longer exists`);
+        continue;
+      }
+      if (product.stock < item.quantity) {
+        stockErrors.push(`"${product.name}" only has ${product.stock} units in stock (requested ${item.quantity})`);
+        continue;
+      }
+      productDocs.push({ doc: product, quantity: item.quantity });
+    }
+
+    if (stockErrors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Insufficient stock: ' + stockErrors.join('; ')
+      });
+    }
+
+    // ── Decrement Stock ──
+    for (const { doc, quantity } of productDocs) {
+      doc.stock -= quantity;
+      await doc.save();
     }
 
     const trackingNumber = 'ENEN-' + Math.floor(100000 + Math.random() * 900000);
@@ -86,6 +119,20 @@ exports.updateOrderStatus = async (req, res) => {
     const order = await Order.findById(id);
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    const previousStatus = order.orderStatus;
+
+    // ── Stock Restoration on Cancellation ──
+    // If the order is being cancelled and was NOT previously cancelled, restore stock
+    if (orderStatus === 'Cancelled' && previousStatus !== 'Cancelled') {
+      for (const item of order.products) {
+        if (item.productId) {
+          await Product.findByIdAndUpdate(item.productId, {
+            $inc: { stock: item.quantity }
+          });
+        }
+      }
     }
 
     if (orderStatus) order.orderStatus = orderStatus;
