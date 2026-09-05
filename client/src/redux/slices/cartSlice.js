@@ -51,7 +51,7 @@ const cartSlice = createSlice({
     addToCartLocal: (state, action) => {
       const { product, size = 'L', color = 'Black', quantity = 1 } = action.payload;
       const existingIndex = state.items.findIndex(
-        i => (i.product._id || i.product.id) === (product._id || product.id) && i.size === size && i.color === color
+        i => i.product && (i.product._id || i.product.id) === (product._id || product.id) && i.size === size && i.color === color
       );
 
       if (existingIndex > -1) {

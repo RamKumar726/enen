@@ -27,7 +27,7 @@ export const CartProvider = ({ children }) => {
 
   const discountAmount = (subtotal * (cartState.discountPercent || 0)) / 100;
   const taxAmount = (subtotal - discountAmount) * 0.18; // 18% GST/Tax
-  const shippingAmount = subtotal > 50 || cartItems.length === 0 ? 0 : 4.99; // Free shipping over $50
+  const shippingAmount = subtotal > 999 || cartItems.length === 0 ? 0 : 99; // Free shipping over ₹999
   const grandTotal = Math.max(0, subtotal - discountAmount + taxAmount + shippingAmount);
 
   const totalQuantity = cartItems.reduce((acc, item) => acc + item.quantity, 0);

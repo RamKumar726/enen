@@ -4,7 +4,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProductGrid from '../components/ProductGrid';
 import { fetchProducts, setFilter, resetFilters } from '../redux/slices/productSlice';
-import { Filter, SlidersHorizontal, RotateCcw, Search, Flame, X, ChevronDown } from 'lucide-react';
+import { clanService } from '../services/api';
+import { Filter, SlidersHorizontal, RotateCcw, Search, Flame, X, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const FilterSection = ({ title, children }) => {
   const [open, setOpen] = useState(true);
@@ -31,33 +32,77 @@ const FilterSection = ({ title, children }) => {
 const Shop = () => {
   const dispatch = useDispatch();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { items, loading, filters, page, totalProducts } = useSelector((state) => state.products);
+  const { items, loading, filters, page, pages, totalProducts } = useSelector((state) => state.products);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+
+  // Real categories & collections matching DB
+  const categories = ['All', 'Regular T-Shirt', 'Oversized', 'Sweatshirt', 'Sleeveless'];
+  const [collections, setCollections] = useState(['All', 'One Piece', 'Demon Slayer', 'Naruto', 'Attack on Titan', 'My Hero Academia']);
+  const sizes = ['S', 'M', 'L', 'XL', 'XXL'];
+
+  useEffect(() => {
+    clanService.getClans().then(res => {
+      if (res.success && res.clans?.length > 0) {
+        setCollections(['All', ...res.clans.map(c => c.value)]);
+      }
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const s = searchParams.get('search');
     const c = searchParams.get('category');
-    if (s !== null || c !== null) dispatch(setFilter({ search: s || '', category: c || 'All' }));
+    const col = searchParams.get('collection');
+    const updates = {};
+    if (s !== null) updates.search = s;
+    if (c !== null) updates.category = c || 'All';
+    if (col !== null) updates.collection = col || 'All';
+    if (Object.keys(updates).length > 0) dispatch(setFilter(updates));
   }, [searchParams, dispatch]);
 
   useEffect(() => {
-    dispatch(fetchProducts({ category: filters.category, minPrice: filters.minPrice, maxPrice: filters.maxPrice, size: filters.size, color: filters.color, search: filters.search, sort: filters.sort, page }));
+    dispatch(fetchProducts({
+      category: filters.category !== 'All' ? filters.category : undefined,
+      collection: filters.collection && filters.collection !== 'All' ? filters.collection : undefined,
+      minPrice: filters.minPrice > 0 ? filters.minPrice : undefined,
+      maxPrice: filters.maxPrice < 50 ? filters.maxPrice : undefined,
+      size: filters.size || undefined,
+      color: filters.color || undefined,
+      search: filters.search || undefined,
+      sort: filters.sort,
+      page
+    }));
   }, [dispatch, filters, page]);
 
   const handleCategoryChange = (cat) => {
-    dispatch(setFilter({ category: cat }));
+    dispatch(setFilter({ category: cat, page: 1 }));
     setSearchParams((p) => { if (cat === 'All') p.delete('category'); else p.set('category', cat); return p; });
   };
+
+  const handleCollectionChange = (col) => {
+    dispatch(setFilter({ collection: col, page: 1 }));
+    setSearchParams((p) => { if (col === 'All') p.delete('collection'); else p.set('collection', col); return p; });
+  };
+
   const handleSearchChange = (e) => {
     const val = e.target.value;
-    dispatch(setFilter({ search: val }));
+    dispatch(setFilter({ search: val, page: 1 }));
     setSearchParams((p) => { if (!val) p.delete('search'); else p.set('search', val); return p; });
   };
+
   const handleClearAll = () => { dispatch(resetFilters()); setSearchParams({}); };
 
-  const categories = ['All', 'Anime Classics', 'Trending', 'Custom'];
-  const sizes = ['S', 'M', 'L', 'XL', 'XXL'];
-  const hasActiveFilters = filters.category !== 'All' || filters.search || filters.size || filters.minPrice > 0 || filters.maxPrice < 50;
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > pages) return;
+    dispatch(setFilter({ page: newPage }));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const hasActiveFilters = filters.category !== 'All' ||
+    (filters.collection && filters.collection !== 'All') ||
+    filters.search ||
+    filters.size ||
+    filters.minPrice > 0 ||
+    filters.maxPrice < 50;
 
   /* Shared input classes */
   const inputCls = 'w-full bg-[#F4F1EA] dark:bg-[#0D0D11] border border-[#DDD9D0] dark:border-[#1E1E28] focus:border-[#E85D3D]/50 rounded-xl py-2 text-xs text-[#1C1C1C] dark:text-white placeholder-[#A8A8A8] dark:placeholder-gray-600 focus:outline-none transition-colors';
@@ -108,6 +153,12 @@ const Shop = () => {
                 {filters.category} <button onClick={() => handleCategoryChange('All')}><X className="w-3 h-3" /></button>
               </motion.span>
             )}
+            {filters.collection && filters.collection !== 'All' && (
+              <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                className="px-3 py-1 bg-[#FF7A00]/10 text-[#FF7A00] text-xs font-bold rounded-lg flex items-center gap-1.5 border border-[#FF7A00]/30">
+                {filters.collection} <button onClick={() => handleCollectionChange('All')}><X className="w-3 h-3" /></button>
+              </motion.span>
+            )}
             {filters.search && (
               <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
                 className="px-3 py-1 bg-[#FF7A00]/10 text-[#FF7A00] text-xs font-bold rounded-lg flex items-center gap-1.5 border border-[#FF7A00]/30">
@@ -149,7 +200,8 @@ const Shop = () => {
             </div>
           </FilterSection>
 
-          <FilterSection title="Categories">
+          {/* CATEGORIES — matches actual DB category values */}
+          <FilterSection title="Category">
             <div className="space-y-1">
               {categories.map((cat) => (
                 <motion.button key={cat} whileHover={{ x: 2 }} whileTap={{ scale: 0.97 }} onClick={() => handleCategoryChange(cat)}
@@ -158,8 +210,33 @@ const Shop = () => {
                       ? 'bg-gradient-to-r from-[#E85D3D] to-[#FF7A00] text-white shadow-sm'
                       : 'text-[#4A4A4A] dark:text-gray-400 hover:text-[#1C1C1C] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
                   }`}>
-                  <span>{cat}</span>
+                  <span>{cat === 'All' ? 'All Categories' : cat}</span>
                   {filters.category === cat && <Flame className="w-3 h-3" />}
+                </motion.button>
+              ))}
+            </div>
+          </FilterSection>
+
+          {/* COLLECTIONS — NEW: lets users filter by anime collection */}
+          <FilterSection title="Collection">
+            <div className="space-y-1">
+              {collections.map((col) => (
+                <motion.button key={col} whileHover={{ x: 2 }} whileTap={{ scale: 0.97 }} onClick={() => handleCollectionChange(col)}
+                  className={`w-full text-left px-3 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-between ${
+                    (filters.collection || 'All') === col
+                      ? 'bg-gradient-to-r from-[#FF7A00] to-[#FFB347] text-white shadow-sm'
+                      : 'text-[#4A4A4A] dark:text-gray-400 hover:text-[#1C1C1C] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
+                  }`}>
+                  <span className="flex items-center gap-2">
+                    {col !== 'All' && <span className="text-base leading-none">{
+                      col === 'One Piece' ? '⚓' :
+                      col === 'Demon Slayer' ? '🗡️' :
+                      col === 'Naruto' ? '🍃' :
+                      col === 'Attack on Titan' ? '🛡️' :
+                      col === 'My Hero Academia' ? '✊' : ''
+                    }</span>}
+                    {col === 'All' ? 'All Collections' : col}
+                  </span>
                 </motion.button>
               ))}
             </div>
@@ -183,19 +260,62 @@ const Shop = () => {
           <div className="pt-1">
             <div className="flex items-center justify-between text-xs font-bold mb-3">
               <span className="uppercase text-[#A8A8A8] dark:text-gray-500 tracking-wider text-[10px]">Max Price</span>
-              <span className="text-[#E85D3D] font-black">${filters.maxPrice}</span>
+              <span className="text-[#E85D3D] font-black">₹{filters.maxPrice}</span>
             </div>
             <input type="range" min="10" max="50" step="1" value={filters.maxPrice}
               onChange={(e) => dispatch(setFilter({ maxPrice: Number(e.target.value) }))}
               style={{ '--slider-pct': `${((filters.maxPrice - 10) / 40) * 100}%` }} className="w-full" />
             <div className="flex justify-between text-[10px] text-[#A8A8A8] dark:text-gray-600 font-semibold mt-1">
-              <span>$10</span><span>$50</span>
+              <span>₹10</span><span>₹50</span>
             </div>
           </div>
         </aside>
 
         <main className="md:col-span-3 space-y-6">
           <ProductGrid products={items} loading={loading} />
+
+          {/* PAGINATION */}
+          {pages > 1 && !loading && (
+            <div className="flex items-center justify-center gap-3 pt-4">
+              <button
+                onClick={() => handlePageChange(page - 1)}
+                disabled={page <= 1}
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold bg-white dark:bg-[#18181F] border border-[#EAE6DD] dark:border-[#282834] text-[#1C1C1C] dark:text-white rounded-xl hover:border-[#E85D3D]/40 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" /> Prev
+              </button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => handlePageChange(p)}
+                    className={`w-8 h-8 text-xs font-bold rounded-xl border transition-all ${
+                      p === page
+                        ? 'bg-gradient-to-br from-[#E85D3D] to-[#FF7A00] text-white border-transparent shadow-flame-glow'
+                        : 'bg-white dark:bg-[#18181F] border-[#EAE6DD] dark:border-[#282834] text-[#4A4A4A] dark:text-gray-400 hover:border-[#E85D3D]/40'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => handlePageChange(page + 1)}
+                disabled={page >= pages}
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold bg-white dark:bg-[#18181F] border border-[#EAE6DD] dark:border-[#282834] text-[#1C1C1C] dark:text-white rounded-xl hover:border-[#E85D3D]/40 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              >
+                Next <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
+          {pages > 1 && !loading && (
+            <p className="text-center text-[11px] text-[#A8A8A8] dark:text-gray-600 font-semibold">
+              Page {page} of {pages} — {totalProducts} total products
+            </p>
+          )}
         </main>
       </div>
     </div>

@@ -32,10 +32,10 @@ const AdminHome = () => {
   const kpiCards = [
     {
       name: 'Total Revenue',
-      value: `$${stats.totalRevenue.toLocaleString()}`,
+      value: `₹${stats.totalRevenue.toLocaleString()}`,
       icon: DollarSign,
       color: 'from-[#D9480F] to-[#E85D3D]',
-      badge: stats.monthRevenue > 0 ? `$${stats.monthRevenue.toLocaleString()} this month` : 'No revenue yet'
+      badge: stats.monthRevenue > 0 ? `₹${stats.monthRevenue.toLocaleString()} this month` : 'No revenue yet'
     },
     {
       name: 'Total Orders',
@@ -169,7 +169,7 @@ const AdminHome = () => {
                       {ord.products?.map(p => p.name).join(', ') || 'ENEN Anime Tee'}
                     </td>
                     <td className="p-3 font-extrabold text-[#E85D3D]">
-                      ${(ord.totalAmount || 0).toFixed(2)}
+                      ₹{(ord.totalAmount || 0).toFixed(2)}
                     </td>
                     <td className="p-3">
                       <span className={`px-2.5 py-1 text-[10px] uppercase font-bold rounded-lg border ${getStatusBadgeClass(ord.orderStatus)}`}>

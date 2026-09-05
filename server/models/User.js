@@ -27,7 +27,9 @@ const UserSchema = new mongoose.Schema({
   profileImage: { type: String, default: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80' },
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
   addresses: [AddressSchema],
-  refreshToken: { type: String, default: '' }
+  refreshToken: { type: String, default: '' },
+  resetPasswordToken: { type: String, default: undefined },
+  resetPasswordExpire: { type: Date, default: undefined }
 }, {
   timestamps: true
 });

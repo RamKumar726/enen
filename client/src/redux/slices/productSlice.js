@@ -38,6 +38,7 @@ const productSlice = createSlice({
     totalProducts: 0,
     filters: {
       category: 'All',
+      collection: 'All',
       search: '',
       minPrice: 0,
       maxPrice: 50,
@@ -53,6 +54,7 @@ const productSlice = createSlice({
     resetFilters: (state) => {
       state.filters = {
         category: 'All',
+        collection: 'All',
         search: '',
         minPrice: 0,
         maxPrice: 50,
@@ -60,6 +62,7 @@ const productSlice = createSlice({
         color: '',
         sort: 'newest'
       };
+      state.page = 1;
     },
     clearCurrentProduct: (state) => {
       state.currentProduct = null;

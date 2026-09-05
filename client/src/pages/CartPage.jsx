@@ -109,7 +109,7 @@ const CartPage = () => {
                       <span>Color: {item.color || 'Black'}</span>
                     </div>
                     <span className="text-sm font-extrabold text-[#E85D3D] block sm:hidden">
-                      ${price}
+                      ₹{price}
                     </span>
                   </div>
                 </div>
@@ -133,7 +133,7 @@ const CartPage = () => {
                   </div>
 
                   <span className="text-lg font-extrabold text-white hidden sm:block">
-                    ${(price * item.quantity).toFixed(2)}
+                    ₹{(price * item.quantity).toFixed(2)}
                   </span>
 
                   <button
@@ -181,29 +181,29 @@ const CartPage = () => {
           <div className="space-y-3 text-xs text-gray-300 pt-2 border-t border-[#282834]">
             <div className="flex justify-between">
               <span>Items Subtotal</span>
-              <span className="font-bold text-white">${subtotal.toFixed(2)}</span>
+              <span className="font-bold text-white">₹{subtotal.toFixed(2)}</span>
             </div>
 
             {discountAmount > 0 && (
               <div className="flex justify-between text-[#FF7A00] font-bold">
                 <span>Discount ({discountCode})</span>
-                <span>-${discountAmount.toFixed(2)}</span>
+                <span>-₹{discountAmount.toFixed(2)}</span>
               </div>
             )}
 
             <div className="flex justify-between">
               <span>Estimated Tax (18% GST)</span>
-              <span className="font-bold text-white">${taxAmount.toFixed(2)}</span>
+              <span className="font-bold text-white">₹{taxAmount.toFixed(2)}</span>
             </div>
 
             <div className="flex justify-between">
               <span>Shipping</span>
-              <span className="font-bold text-white">{shippingAmount === 0 ? 'FREE' : `$${shippingAmount.toFixed(2)}`}</span>
+              <span className="font-bold text-white">{shippingAmount === 0 ? 'FREE' : `₹${shippingAmount.toFixed(2)}`}</span>
             </div>
 
             <div className="flex justify-between text-base font-extrabold text-white pt-3 border-t border-[#282834]">
               <span>Grand Total</span>
-              <span className="text-flame-gradient text-xl">${grandTotal.toFixed(2)}</span>
+              <span className="text-flame-gradient text-xl">₹{grandTotal.toFixed(2)}</span>
             </div>
           </div>
 

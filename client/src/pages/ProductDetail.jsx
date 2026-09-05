@@ -181,15 +181,15 @@ const ProductDetail = () => {
           {/* PRICING */}
           <div className="flex items-baseline gap-3">
             <span className="text-3xl font-extrabold text-flame-gradient">
-              ${currentProduct.price}
+              ₹{currentProduct.price}
             </span>
             {currentProduct.originalPrice > currentProduct.price && (
               <>
                 <span className="text-base text-gray-500 line-through font-semibold">
-                  ${currentProduct.originalPrice}
+                  ₹{currentProduct.originalPrice}
                 </span>
                 <span className="px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 text-xs font-extrabold rounded-md border border-emerald-500/40">
-                  Save ${(currentProduct.originalPrice - currentProduct.price).toFixed(2)}
+                  Save ₹{(currentProduct.originalPrice - currentProduct.price).toFixed(2)}
                 </span>
               </>
             )}
@@ -351,20 +351,32 @@ const ProductDetail = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300">
             <div className="p-4 bg-[#121218] border border-[#282834] rounded-2xl">
               <strong className="text-white block font-bold">Fabric Composition:</strong>
-              <span>240 GSM Heavyweight 100% Ring-Spun Terry Cotton</span>
+              <span>{currentProduct.fabric || '240 GSM Heavyweight 100% Ring-Spun Terry Cotton'}</span>
             </div>
             <div className="p-4 bg-[#121218] border border-[#282834] rounded-2xl">
               <strong className="text-[#FF7A00] block font-bold">Print Technique:</strong>
-              <span>High-Density 3D Puff & Soft-Touch Screen Print</span>
+              <span>{currentProduct.printType || 'High-Density 3D Puff & Soft-Touch Screen Print'}</span>
             </div>
             <div className="p-4 bg-[#121218] border border-[#282834] rounded-2xl">
               <strong className="text-white block font-bold">Silhouette & Fit:</strong>
-              <span>Oversized Streetwear Drop-Shoulder Boxy Fit</span>
+              <span>{currentProduct.category === 'Oversized' ? 'Oversized Streetwear Drop-Shoulder Boxy Fit' : currentProduct.category === 'Sweatshirt' ? 'Relaxed Fit Pullover Sweatshirt' : 'Regular / Relaxed Unisex Fit'}</span>
             </div>
             <div className="p-4 bg-[#121218] border border-[#282834] rounded-2xl">
               <strong className="text-white block font-bold">Care Instructions:</strong>
               <span>Machine wash cold inside out. Do not iron directly on puff print.</span>
             </div>
+            {currentProduct.animeSeries && (
+              <div className="p-4 bg-[#121218] border border-[#282834] rounded-2xl">
+                <strong className="text-[#E85D3D] block font-bold">Anime Series:</strong>
+                <span>{currentProduct.animeSeries}</span>
+              </div>
+            )}
+            {currentProduct.collectionName && (
+              <div className="p-4 bg-[#121218] border border-[#282834] rounded-2xl">
+                <strong className="text-white block font-bold">Collection:</strong>
+                <span>{currentProduct.collectionName}</span>
+              </div>
+            )}
           </div>
         )}
 
@@ -401,7 +413,11 @@ const ProductDetail = () => {
               {isAuthenticated ? (
                 <form onSubmit={handleReviewSubmit} className="space-y-4 max-w-xl">
                   {reviewMsg && (
-                    <p className="text-xs font-bold text-emerald-400 bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/30">
+                    <p className={`text-xs font-bold p-3 rounded-xl border ${
+                      reviewMsg.includes('success') || reviewMsg.includes('🔥')
+                        ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30'
+                        : 'text-red-400 bg-red-500/10 border-red-500/30'
+                    }`}>
                       {reviewMsg}
                     </p>
                   )}

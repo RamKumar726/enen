@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { productService } from '../../services/api';
+import { productService, clanService } from '../../services/api';
 import { ShoppingBag, Plus, Search, Edit, Trash2, Filter, Flame } from 'lucide-react';
 
 const ProductManagement = () => {
   const [products, setProducts] = useState([]);
+  const [clans, setClans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
@@ -25,6 +26,9 @@ const ProductManagement = () => {
 
   useEffect(() => {
     loadProducts();
+    clanService.getClans().then(res => {
+      if (res.success && res.clans?.length > 0) setClans(res.clans);
+    }).catch(() => {});
   }, []);
 
   const handleDelete = async (id) => {
@@ -110,11 +114,19 @@ const ProductManagement = () => {
             className="bg-[#121218] border border-[#282834] text-xs font-bold text-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:border-[#E85D3D]"
           >
             <option value="All">All Anime Collections</option>
-            <option value="One Piece">One Piece Collection</option>
-            <option value="Demon Slayer">Demon Slayer Collection</option>
-            <option value="Naruto">Naruto Collection</option>
-            <option value="Attack on Titan">Attack on Titan Collection</option>
-            <option value="My Hero Academia">My Hero Academia Collection</option>
+            {clans.length > 0 ? (
+              clans.map(c => (
+                <option key={c._id || c.value} value={c.value}>{c.name} Collection</option>
+              ))
+            ) : (
+              <>
+                <option value="One Piece">One Piece Collection</option>
+                <option value="Demon Slayer">Demon Slayer Collection</option>
+                <option value="Naruto">Naruto Collection</option>
+                <option value="Attack on Titan">Attack on Titan Collection</option>
+                <option value="My Hero Academia">My Hero Academia Collection</option>
+              </>
+            )}
           </select>
         </div>
       </div>
@@ -154,7 +166,7 @@ const ProductManagement = () => {
                         {p.collectionName}
                       </span>
                     </td>
-                    <td className="p-4 font-extrabold text-[#E85D3D] text-sm">${p.price}</td>
+                    <td className="p-4 font-extrabold text-[#E85D3D] text-sm">₹{p.price}</td>
                     <td className="p-4">
                       <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${p.stock > 10 ? 'text-emerald-400' : 'text-amber-400 bg-amber-500/10'}`}>
                         {p.stock} units

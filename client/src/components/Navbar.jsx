@@ -9,6 +9,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useTheme } from '../context/ThemeContext';
+import { clanService } from '../services/api';
 import ENENLogo from './ENENLogo';
 
 // Custom Apparel Category Vector Icons
@@ -93,13 +94,26 @@ const Navbar = () => {
     { name: 'Sweatshirts', value: 'Sweatshirt', icon: <SweatshirtIcon className="w-4 h-4 text-[#F59E0B]" /> },
     { name: 'Oversized T-Shirts', value: 'Oversized', icon: <OversizedTShirtIcon className="w-4 h-4 text-[#60A5FA]" /> }
   ];
-  const collections = [
+  const [collections, setCollections] = useState([
     { name: 'One Piece', value: 'One Piece', icon: '⚓', color: '#E85D3D' },
     { name: 'Demon Slayer', value: 'Demon Slayer', icon: '🗡️', color: '#FF7A00' },
     { name: 'Naruto', value: 'Naruto', icon: '🍃', color: '#FFB347' },
     { name: 'Attack on Titan', value: 'Attack on Titan', icon: '🛡️', color: '#9CA3AF' },
     { name: 'My Hero Academia', value: 'My Hero Academia', icon: '✊', color: '#60A5FA' }
-  ];
+  ]);
+
+  useEffect(() => {
+    clanService.getClans().then(res => {
+      if (res.success && res.clans?.length > 0) {
+        setCollections(res.clans.map(c => ({
+          name: c.name,
+          value: c.value,
+          icon: c.icon || '⚔️',
+          color: c.accent || '#E85D3D'
+        })));
+      }
+    }).catch(() => {});
+  }, []);
 
   const isActive = (path) => location.pathname === path;
 

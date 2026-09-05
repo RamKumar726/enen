@@ -26,9 +26,14 @@ const Footer = () => {
   const supportLinks = [
     { to: '/orders', label: 'Order Tracking' },
     { to: '/profile', label: 'My Account' },
-    { href: '#', label: 'Size Guide & Fabric Info' },
-    { href: '#', label: 'Shipping & Returns' },
-    { href: '#', label: 'Contact Support' },
+    { to: '/shipping-policy', label: 'Shipping Policy' },
+    { to: '/return-policy', label: 'Returns & Refunds' },
+  ];
+  const legalLinks = [
+    { to: '/privacy-policy', label: 'Privacy Policy' },
+    { to: '/terms', label: 'Terms & Conditions' },
+    { to: '/return-policy', label: 'Return Policy' },
+    { to: '/shipping-policy', label: 'Shipping Policy' },
   ];
   const socials = [
     { icon: Instagram, label: 'Instagram', color: '#E1306C' },
@@ -146,6 +151,12 @@ const Footer = () => {
       {/* BOTTOM BAR */}
       <div className="relative max-w-7xl mx-auto mt-16 pt-6">
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#E85D3D]/30 to-transparent" />
+        {/* Legal Links Row */}
+        <div className="flex flex-wrap justify-center gap-x-5 gap-y-1 text-[11px] text-[#A8A8A8] dark:text-gray-600 mb-4">
+          {legalLinks.map(({ to, label }) => (
+            <Link key={to} to={to} className="hover:text-[#E85D3D] transition-colors">{label}</Link>
+          ))}
+        </div>
         <div className="flex flex-col sm:flex-row items-center justify-between text-[11px] text-[#A8A8A8] dark:text-gray-600 gap-3">
           <p>© {new Date().getFullYear()} ENEN Apparel Co. All rights reserved.</p>
           <div className="flex items-center gap-4">

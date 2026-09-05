@@ -6,7 +6,7 @@ import { useCart } from '../context/CartContext';
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
-  const [selectedSize, setSelectedSize] = useState('L');
+  const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || 'M');
   const [isAdded, setIsAdded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [wishlisted, setWishlisted] = useState(false);
@@ -146,11 +146,11 @@ const ProductCard = ({ product }) => {
         <div className="flex items-center justify-between gap-1.5 mt-auto pt-2 border-t border-[#EAE6DD] dark:border-[#1E1E28]">
           <div className="flex items-baseline gap-1 min-w-0">
             <span className="text-base sm:text-lg font-black text-[#1C1C1C] dark:text-white truncate">
-              ${product.price}
+              ₹{product.price}
             </span>
             {product.originalPrice > product.price && (
               <span className="text-[10px] text-[#A8A8A8] dark:text-[#48484E] line-through hidden sm:inline">
-                ${product.originalPrice}
+                ₹{product.originalPrice}
               </span>
             )}
           </div>

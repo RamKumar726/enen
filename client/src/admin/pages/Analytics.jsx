@@ -55,7 +55,7 @@ const Analytics = () => {
             <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
               <Layers className="w-5 h-5 text-[#E85D3D]" /> Revenue by Anime Collection
             </h3>
-            <span className="text-xs font-extrabold text-[#FF7A00]">${totalCollectionSales.toLocaleString()} Total</span>
+            <span className="text-xs font-extrabold text-[#FF7A00]">₹{totalCollectionSales.toLocaleString()} Total</span>
           </div>
 
           <div className="space-y-4">
@@ -65,7 +65,7 @@ const Analytics = () => {
                 <div key={idx} className="space-y-1.5">
                   <div className="flex justify-between text-xs font-bold">
                     <span className="text-white">{item.name}</span>
-                    <span className="text-[#E85D3D]">${item.sales.toLocaleString()} ({item.orders} orders)</span>
+                    <span className="text-[#E85D3D]">₹{item.sales.toLocaleString()} ({item.orders} orders)</span>
                   </div>
                   <div className="w-full h-3 bg-[#121218] rounded-full overflow-hidden border border-[#282834]">
                     <div

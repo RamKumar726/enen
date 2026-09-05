@@ -19,12 +19,18 @@ import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
 import OrdersPage from './pages/OrdersPage';
 import NotFound from './pages/NotFound';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsPage from './pages/TermsPage';
+import ReturnPolicy from './pages/ReturnPolicy';
+import ShippingPolicy from './pages/ShippingPolicy';
 
 // Admin Suite Components
 import AdminLayout from './admin/AdminLayout';
 import AdminHome from './admin/pages/AdminHome';
 import CarouselManagement from './admin/pages/CarouselManagement';
 import AddEditCarousel from './admin/pages/AddEditCarousel';
+import ClanManagement from './admin/pages/ClanManagement';
 import ProductManagement from './admin/pages/ProductManagement';
 import AddEditProduct from './admin/pages/AddEditProduct';
 import OrderManagement from './admin/pages/OrderManagement';
@@ -48,6 +54,7 @@ function App() {
           <Route path="carousel" element={<CarouselManagement />} />
           <Route path="carousel/new" element={<AddEditCarousel />} />
           <Route path="carousel/edit/:id" element={<AddEditCarousel />} />
+          <Route path="clans" element={<ClanManagement />} />
           <Route path="products" element={<ProductManagement />} />
           <Route path="products/new" element={<AddEditProduct />} />
           <Route path="products/edit/:id" element={<AddEditProduct />} />
@@ -74,6 +81,11 @@ function App() {
                   <Route path="/cart" element={<CartPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                  <Route path="/terms" element={<TermsPage />} />
+                  <Route path="/return-policy" element={<ReturnPolicy />} />
+                  <Route path="/shipping-policy" element={<ShippingPolicy />} />
 
                   <Route
                     path="/checkout"

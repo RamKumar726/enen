@@ -20,6 +20,7 @@ const AdminSidebar = () => {
   const menuItems = [
     { name: 'Dashboard Overview', path: '/admin', icon: LayoutDashboard },
     { name: 'Carousel Banners', path: '/admin/carousel', icon: Sliders, badge: 'Deals' },
+    { name: 'Choose Your Clan', path: '/admin/clans', icon: Flame, badge: 'Vaults' },
     { name: 'Product Management', path: '/admin/products', icon: ShoppingBag },
     { name: 'Order Management', path: '/admin/orders', icon: PackageCheck },
     { name: 'User Accounts', path: '/admin/users', icon: Users },

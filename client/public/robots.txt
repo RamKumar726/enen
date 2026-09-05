@@ -1,0 +1,10 @@
+﻿User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /checkout
+Disallow: /orders
+Disallow: /profile
+Disallow: /cart
+
+# Sitemap
+Sitemap: https://enen.com/sitemap.xml

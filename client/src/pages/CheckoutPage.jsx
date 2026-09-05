@@ -38,7 +38,7 @@ const CheckoutPage = () => {
     country: 'India'
   });
 
-  const [paymentMethod, setPaymentMethod] = useState('Razorpay');
+  const [paymentMethod, setPaymentMethod] = useState('UPI');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
 
@@ -190,10 +190,10 @@ const CheckoutPage = () => {
       itemsPrice: subtotal - discountAmount
     };
 
-    if (paymentMethod === 'Razorpay') {
+    if (paymentMethod === 'UPI') {
       await handleRazorpayPayment(orderPayload);
     } else {
-      // COD or direct card simulation
+      // Cash on Delivery
       try {
         await dispatch(createNewOrder(orderPayload));
         clearCart();
@@ -355,14 +355,13 @@ const CheckoutPage = () => {
           {/* PAYMENT METHOD SELECTION */}
           <div className="bg-[#18181F] border border-[#282834] rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
             <h3 className="text-xl font-extrabold text-white border-b border-[#282834] pb-4">
-              PAYMENT METHOD
+              SELECT PAYMENT METHOD
             </h3>
 
             <div className="space-y-3">
               {[
-                { id: 'Razorpay', label: 'Razorpay (Credit/Debit Cards, UPI, Netbanking)', desc: 'Instant 256-bit SSL secured gateway', recommended: true },
-                { id: 'UPI', label: 'Direct UPI / QR Code', desc: 'Google Pay, PhonePe, Paytm' },
-                { id: 'Cash on Delivery', label: 'Cash on Delivery (COD)', desc: 'Pay with cash upon delivery' }
+                { id: 'UPI', label: 'UPI Payment (GPay, PhonePe, Paytm, QR / UPI ID)', desc: 'Instant & 100% secure payment via Razorpay UPI', recommended: true },
+                { id: 'Cash on Delivery', label: 'Cash on Delivery (COD)', desc: 'Pay cash when package arrives at your doorstep' }
               ].map((pm) => (
                 <div
                   key={pm.id}
@@ -419,7 +418,7 @@ const CheckoutPage = () => {
                       <p className="text-gray-400 text-[11px]">Qty: {item.quantity} • Size: {item.size}</p>
                     </div>
                   </div>
-                  <span className="font-bold text-white">${(price * item.quantity).toFixed(2)}</span>
+                  <span className="font-bold text-white">₹{(price * item.quantity).toFixed(2)}</span>
                 </div>
               );
             })}
@@ -428,26 +427,26 @@ const CheckoutPage = () => {
           <div className="space-y-2 text-xs text-gray-300 border-t border-[#282834] pt-4">
             <div className="flex justify-between">
               <span>Subtotal</span>
-              <span className="font-bold text-white">${subtotal.toFixed(2)}</span>
+              <span className="font-bold text-white">₹{subtotal.toFixed(2)}</span>
             </div>
             {discountAmount > 0 && (
               <div className="flex justify-between text-[#FF7A00] font-bold">
                 <span>Discount</span>
-                <span>-${discountAmount.toFixed(2)}</span>
+                <span>-₹{discountAmount.toFixed(2)}</span>
               </div>
             )}
             <div className="flex justify-between">
               <span>Tax (18%)</span>
-              <span className="font-bold text-white">${taxAmount.toFixed(2)}</span>
+              <span className="font-bold text-white">₹{taxAmount.toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span>Shipping</span>
-              <span className="font-bold text-white">{shippingAmount === 0 ? 'FREE' : `$${shippingAmount.toFixed(2)}`}</span>
+              <span className="font-bold text-white">{shippingAmount === 0 ? 'FREE' : `₹${shippingAmount.toFixed(2)}`}</span>
             </div>
 
             <div className="flex justify-between text-base font-extrabold text-white pt-3 border-t border-[#282834]">
               <span>Payable Amount</span>
-              <span className="text-flame-gradient text-xl">${grandTotal.toFixed(2)}</span>
+              <span className="text-flame-gradient text-xl">₹{grandTotal.toFixed(2)}</span>
             </div>
           </div>
 
@@ -461,7 +460,7 @@ const CheckoutPage = () => {
             ) : (
               <>
                 <Flame className="w-5 h-5" />
-                <span>PAY ${grandTotal.toFixed(2)} & IGNITE ORDER</span>
+                <span>PAY ₹{grandTotal.toFixed(2)} & IGNITE ORDER</span>
               </>
             )}
           </button>

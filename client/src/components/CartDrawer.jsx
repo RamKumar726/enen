@@ -138,7 +138,7 @@ const CartDrawer = () => {
 
                           <div className="flex items-center justify-between pt-2">
                             <span className="text-sm font-extrabold text-[#E85D3D]">
-                              ${price}
+                              ₹{price}
                             </span>
 
                             {/* QUANTITY CONTROLS */}
@@ -192,24 +192,24 @@ const CartDrawer = () => {
                   <div className="space-y-1.5 text-xs text-gray-300">
                     <div className="flex justify-between">
                       <span>Subtotal</span>
-                      <span className="font-bold text-white">${subtotal.toFixed(2)}</span>
+                      <span className="font-bold text-white">₹{subtotal.toFixed(2)}</span>
                     </div>
 
                     {discountAmount > 0 && (
                       <div className="flex justify-between text-[#FF7A00] font-bold">
                         <span>Discount ({discountCode})</span>
-                        <span>-${discountAmount.toFixed(2)}</span>
+                        <span>-₹{discountAmount.toFixed(2)}</span>
                       </div>
                     )}
 
                     <div className="flex justify-between text-gray-400">
                       <span>Estimated Shipping</span>
-                      <span>{subtotal > 50 ? 'FREE' : '$4.99'}</span>
+                      <span>{subtotal > 999 ? 'FREE' : '₹99'}</span>
                     </div>
 
                     <div className="flex justify-between text-base font-extrabold text-white pt-2 border-t border-[#282834]">
                       <span>Grand Total</span>
-                      <span className="text-flame-gradient">${grandTotal.toFixed(2)}</span>
+                      <span className="text-flame-gradient">₹{grandTotal.toFixed(2)}</span>
                     </div>
                   </div>
 

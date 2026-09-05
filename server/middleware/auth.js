@@ -6,16 +6,19 @@ const verifyToken = (req, res, next) => {
 
   if (authHeader && authHeader.startsWith('Bearer ')) {
     token = authHeader.split(' ')[1];
-  } else if (req.query && req.query.token) {
-    token = req.query.token;
   }
 
   if (!token) {
     return res.status(401).json({ success: false, message: 'Access denied. No token provided.' });
   }
 
+  if (!process.env.JWT_SECRET) {
+    console.error('[ENEN Auth] FATAL: JWT_SECRET env var is missing!');
+    return res.status(500).json({ success: false, message: 'Server configuration error.' });
+  }
+
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'enen_flame_jwt_secret_key_2026_unleash_the_blaze');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
     next();
   } catch (error) {

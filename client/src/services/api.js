@@ -42,7 +42,8 @@ export const authService = {
   login: (data) => api.post('/auth/login', data),
   logout: () => api.post('/auth/logout'),
   refreshToken: (refreshToken) => api.post('/auth/refresh-token', { refreshToken }),
-  forgotPassword: (email) => api.post('/auth/forgot-password', { email })
+  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+  resetPassword: (token, data) => api.put(`/auth/reset-password/${token}`, data)
 };
 
 // Carousel Services
@@ -53,6 +54,16 @@ export const carouselService = {
   updateBanner: (id, data) => api.put(`/carousel/${id}`, data),
   toggleBannerStatus: (id) => api.put(`/carousel/${id}/toggle`),
   deleteBanner: (id) => api.delete(`/carousel/${id}`)
+};
+
+// Clan / Category Services
+export const clanService = {
+  getClans: () => api.get('/clans'),
+  getAdminClans: () => api.get('/clans/admin'),
+  getClanById: (id) => api.get(`/clans/${id}`),
+  createClan: (data) => api.post('/clans', data),
+  updateClan: (id, data) => api.put(`/clans/${id}`, data),
+  deleteClan: (id) => api.delete(`/clans/${id}`)
 };
 
 // Product Services
@@ -79,6 +90,8 @@ export const orderService = {
   createOrder: (orderData) => api.post('/orders', orderData),
   getUserOrders: () => api.get('/orders'),
   getOrderById: (id) => api.get(`/orders/${id}`),
+  cancelOrder: (id, data) => api.post(`/orders/${id}/cancel`, data),
+  requestReturn: (id, data) => api.post(`/orders/${id}/return`, data),
   updateOrderStatus: (id, statusData) => api.put(`/orders/${id}`, statusData)
 };
 
