@@ -56,7 +56,11 @@ const sampleCarouselBanners = [
 
 exports.getActiveBanners = async (req, res) => {
   try {
-    const banners = await Carousel.find({ isActive: true }).sort({ displayOrder: 1 });
+    let banners = await Carousel.find({ isActive: true }).sort({ displayOrder: 1 });
+    if (banners.length === 0) {
+      banners = await Carousel.insertMany(sampleCarouselBanners);
+      console.log('[Carousel Controller] Auto-seeded default carousel banners');
+    }
     res.json({ success: true, banners });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
