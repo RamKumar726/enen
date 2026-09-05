@@ -4,106 +4,27 @@ import { motion, useInView } from 'framer-motion';
 import { ArrowRight, Flame, ArrowUpRight } from 'lucide-react';
 import { clanService } from '../services/api';
 
-const defaultCollections = [
-  { _id: 'one-piece',        name: 'One Piece',         value: 'One Piece',        subtitle: 'Warrior of Liberation', count: 4, image: 'https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?auto=format&fit=crop&w=700&q=80', badge: 'Popular',       accent: '#E85D3D', icon: '⚓' },
-  { _id: 'demon-slayer',     name: 'Demon Slayer',      value: 'Demon Slayer',     subtitle: 'Hinokami Flame Art',   count: 4, image: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=700&q=80', badge: 'Trending',      accent: '#FF7A00', icon: '🗡️' },
-  { _id: 'naruto',           name: 'Naruto',            value: 'Naruto',           subtitle: 'Kurama Chakra',        count: 3, image: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?auto=format&fit=crop&w=700&q=80', badge: 'Classic',       accent: '#F59E0B', icon: '🍃' },
-  { _id: 'attack-on-titan',  name: 'Attack on Titan',  value: 'Attack on Titan',  subtitle: 'Freedom Wings',        count: 4, image: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=700&q=80', badge: 'Limited',       accent: '#94A3B8', icon: '🛡️' },
-  { _id: 'my-hero-academia', name: 'My Hero Academia', value: 'My Hero Academia', subtitle: 'Plus Ultra Heroes',    count: 3, image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=700&q=80', badge: 'Hero Exclusive', accent: '#60A5FA', icon: '✊' },
-];
-
-const CollectionCard = ({ item, index }) => {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: '-40px' });
-
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 40 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.55, delay: index * 0.08, ease: [0.4, 0, 0.2, 1] }}
-      whileHover={{ y: -6 }}
-      className="group relative rounded-2xl sm:rounded-3xl overflow-hidden cursor-pointer"
-      style={{ height: 'clamp(220px, 38vw, 400px)' }}
-    >
-      {/* Image */}
-      <motion.img
-        src={item.image} alt={item.name}
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{ filter: 'brightness(0.45) saturate(1.1)' }}
-        whileHover={{ scale: 1.07 }}
-        transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-      />
-
-      {/* Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/25 to-transparent opacity-85" />
-
-      {/* Accent hover glow */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-        style={{ background: `radial-gradient(ellipse at 50% 100%, ${item.accent || '#E85D3D'}28 0%, transparent 65%)` }} />
-
-      {/* Badge */}
-      <div className="absolute top-2.5 left-2.5 z-10">
-        <span className="px-2 py-0.5 text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-white rounded-lg"
-          style={{ background: (item.accent || '#E85D3D') + 'DD' }}>
-          {item.badge || 'Popular'}
-        </span>
-      </div>
-
-      {/* Count */}
-      <div className="absolute top-2.5 right-2.5 z-10">
-        <span className="px-2 py-0.5 text-[9px] font-bold text-white/65 bg-black/45 backdrop-blur rounded-lg">
-          {item.count || 0}
-        </span>
-      </div>
-
-      {/* Floating emoji */}
-      <motion.div
-        animate={{ y: [0, -6, 0] }}
-        transition={{ duration: 4 + index * 0.4, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute top-9 right-2.5 text-2xl sm:text-3xl opacity-50 group-hover:opacity-80 transition-opacity z-10"
-      >
-        {item.icon || '⚔️'}
-      </motion.div>
-
-      {/* Content */}
-      <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-5 z-10">
-        <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-[0.12em] block mb-0.5" style={{ color: item.accent || '#E85D3D' }}>
-          {item.subtitle}
-        </span>
-        <h3 className="text-base sm:text-xl font-black text-white leading-tight mb-2 sm:mb-3">
-          {item.name}
-        </h3>
-        <Link
-          to={`/collection/${encodeURIComponent(item.value || item.name)}`}
-          className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-extrabold text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl border border-white/20 backdrop-blur-sm transition-all"
-          style={{ background: `${item.accent || '#E85D3D'}CC` }}
-          onClick={e => e.stopPropagation()}
-        >
-          Explore <ArrowUpRight className="w-3 h-3" />
-        </Link>
-
-        {/* Bottom accent line */}
-        <div className="absolute bottom-0 left-0 right-0 h-px opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-          style={{ background: `linear-gradient(90deg, transparent, ${item.accent || '#E85D3D'}, transparent)` }} />
-      </div>
-    </motion.div>
-  );
-};
-
 const Collections = () => {
   const headerRef = useRef(null);
   const headerInView = useInView(headerRef, { once: true });
-  const [clans, setClans] = useState(defaultCollections);
+  const [clans, setClans] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     clanService.getClans()
       .then(res => {
-        if (res.success && res.clans?.length > 0) {
+        if (res.success && res.clans) {
           setClans(res.clans);
+        } else {
+          setClans([]);
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error("Error fetching clans from backend:", err);
+        setClans([]);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   return (

@@ -7,46 +7,10 @@ import { useTheme } from '../context/ThemeContext';
 
 
 
-const defaultBanners = [
-  {
-    _id: 'b1',
-    imageUrl: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?auto=format&fit=crop&w=1600&q=90',
-    title: 'SUMMER DROP',
-    subtitle: '30% OFF ALL ANIME TEES',
-    description: 'Unleash the blaze. 240 GSM heavyweight oversized streetwear.',
-    discountPercentage: 30,
-    ctaText: 'EXPLORE DROP',
-    ctaLink: '/shop?category=Oversized',
-    accent: '#E85D3D'
-  },
-  {
-    _id: 'b2',
-    imageUrl: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=1600&q=90',
-    title: 'DEMON SLAYER',
-    subtitle: 'HASHIRA COLLECTION',
-    description: 'Tanjiro, Rengoku & Muzan high-density puff prints. Never fades.',
-    discountPercentage: 20,
-    ctaText: 'SHOP DEMON SLAYER',
-    ctaLink: '/collection/Demon Slayer',
-    accent: '#FF7A00'
-  },
-  {
-    _id: 'b3',
-    imageUrl: 'https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?auto=format&fit=crop&w=1600&q=90',
-    title: 'ONE PIECE',
-    subtitle: 'SUN GOD NIKA × GEAR 5',
-    description: 'The Warrior of Liberation. Ultra heavyweight boxy tees.',
-    discountPercentage: 25,
-    ctaText: 'VIEW ONE PIECE',
-    ctaLink: '/collection/One Piece',
-    accent: '#E85D3D'
-  }
-];
-
 const Carousel = ({ overrideBanners, videoUrl }) => {
   const { isDark } = useTheme();
-  const [banners, setBanners] = useState(overrideBanners || defaultBanners);
-  const [loading, setLoading] = useState(false);
+  const [banners, setBanners] = useState(overrideBanners || []);
+  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [direction, setDirection] = useState(1);
@@ -63,13 +27,19 @@ const Carousel = ({ overrideBanners, videoUrl }) => {
 
   useEffect(() => {
     if (!overrideBanners) {
+      setLoading(true);
       carouselService.getActiveBanners()
         .then(res => {
-          if (res.success && res.banners?.length > 0) {
+          if (res.success && res.banners) {
             setBanners(res.banners);
+          } else {
+            setBanners([]);
           }
         })
-        .catch(() => {})
+        .catch((err) => {
+          console.error("Error fetching active banners from backend:", err);
+          setBanners([]);
+        })
         .finally(() => setLoading(false));
     } else {
       setBanners(overrideBanners);
