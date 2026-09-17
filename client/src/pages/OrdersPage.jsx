@@ -1,13 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useLocation } from 'react-router-dom';
 import { fetchUserOrders } from '../redux/slices/orderSlice';
 import { orderService } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { PackageCheck, Flame, Printer, XCircle, RotateCcw, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
+import { PackageCheck, Flame, Printer, XCircle, RotateCcw, AlertTriangle, CheckCircle2, RefreshCw, Search } from 'lucide-react';
 
 const OrdersPage = () => {
   const dispatch = useDispatch();
   const { orders, loading } = useSelector((state) => state.orders);
+  const location = useLocation();
+  const trackedOrderRef = useRef(null);
+
+  // Read ?track= param from URL (from navbar tracking input)
+  const trackParam = new URLSearchParams(location.search).get('track');
+  const [trackedOrderId, setTrackedOrderId] = useState(trackParam || '');
+  const [highlightedOrderId, setHighlightedOrderId] = useState(trackParam || '');
 
   // Cancel & Return states
   const [cancelModalOrder, setCancelModalOrder] = useState(null);
@@ -22,6 +30,17 @@ const OrdersPage = () => {
   useEffect(() => {
     dispatch(fetchUserOrders());
   }, [dispatch]);
+
+  // When orders load and there's a tracked ID, scroll to it
+  useEffect(() => {
+    if (highlightedOrderId && orders.length > 0) {
+      setTimeout(() => {
+        if (trackedOrderRef.current) {
+          trackedOrderRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 400);
+    }
+  }, [highlightedOrderId, orders]);
 
   const showBanner = (msg, type = 'success') => {
     setBannerMsg(msg);
@@ -167,7 +186,7 @@ const OrdersPage = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       
-      <div className="border-b border-[#282834] pb-6 flex items-center justify-between">
+      <div className="border-b border-[#282834] pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="inline-flex items-center gap-2 text-xs font-bold text-[#E85D3D] uppercase tracking-widest mb-1">
             <Flame className="w-4 h-4" />
@@ -177,6 +196,30 @@ const OrdersPage = () => {
             MY ORDER <span className="text-flame-gradient">HISTORY</span>
           </h1>
         </div>
+        {/* Inline order search */}
+        <form
+          onSubmit={(e) => { e.preventDefault(); setHighlightedOrderId(trackedOrderId); }}
+          className="flex items-center gap-2"
+        >
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
+            <input
+              type="text"
+              placeholder="Search Order ID..."
+              value={trackedOrderId}
+              onChange={(e) => setTrackedOrderId(e.target.value)}
+              className="pl-9 pr-3 py-2 bg-[#18181F] border border-[#282834] rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#E85D3D] w-48 transition-colors"
+            />
+          </div>
+          <button type="submit" className="px-3 py-2 bg-[#E85D3D]/15 text-[#E85D3D] text-xs font-bold rounded-xl border border-[#E85D3D]/30 hover:bg-[#E85D3D]/25 transition-all">
+            Find
+          </button>
+          {highlightedOrderId && (
+            <button type="button" onClick={() => { setHighlightedOrderId(''); setTrackedOrderId(''); }} className="text-[10px] text-gray-500 hover:text-white transition-colors">
+              ✕ Clear
+            </button>
+          )}
+        </form>
       </div>
 
       {bannerMsg && (
@@ -202,10 +245,20 @@ const OrdersPage = () => {
         </div>
       ) : (
         <div className="space-y-6">
-          {orders.map((order) => (
+          {orders.map((order) => {
+            const isHighlighted = highlightedOrderId && (
+              order._id?.toLowerCase().includes(highlightedOrderId.toLowerCase()) ||
+              order._id === highlightedOrderId
+            );
+            return (
             <div
               key={order._id}
-              className="bg-[#18181F] border border-[#282834] rounded-3xl p-6 space-y-6 shadow-xl"
+              ref={isHighlighted ? trackedOrderRef : null}
+              className={`bg-[#18181F] border rounded-3xl p-6 space-y-6 shadow-xl transition-all duration-500 ${
+                isHighlighted
+                  ? 'border-[#E85D3D] shadow-flame-glow ring-1 ring-[#E85D3D]/30'
+                  : 'border-[#282834]'
+              }`}
             >
               {/* ORDER HEADER */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#282834] pb-4">
@@ -309,7 +362,8 @@ const OrdersPage = () => {
               </div>
 
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

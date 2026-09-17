@@ -64,7 +64,7 @@ const Shop = () => {
       category: filters.category !== 'All' ? filters.category : undefined,
       collection: filters.collection && filters.collection !== 'All' ? filters.collection : undefined,
       minPrice: filters.minPrice > 0 ? filters.minPrice : undefined,
-      maxPrice: filters.maxPrice < 50 ? filters.maxPrice : undefined,
+      maxPrice: filters.maxPrice < 2000 ? filters.maxPrice : undefined,
       size: filters.size || undefined,
       color: filters.color || undefined,
       search: filters.search || undefined,
@@ -102,7 +102,7 @@ const Shop = () => {
     filters.search ||
     filters.size ||
     filters.minPrice > 0 ||
-    filters.maxPrice < 50;
+    filters.maxPrice < 2000;
 
   /* Shared input classes */
   const inputCls = 'w-full bg-[#F4F1EA] dark:bg-[#0D0D11] border border-[#DDD9D0] dark:border-[#1E1E28] focus:border-[#E85D3D]/50 rounded-xl py-2 text-xs text-[#1C1C1C] dark:text-white placeholder-[#A8A8A8] dark:placeholder-gray-600 focus:outline-none transition-colors';
@@ -262,11 +262,11 @@ const Shop = () => {
               <span className="uppercase text-[#A8A8A8] dark:text-gray-500 tracking-wider text-[10px]">Max Price</span>
               <span className="text-[#E85D3D] font-black">₹{filters.maxPrice}</span>
             </div>
-            <input type="range" min="10" max="50" step="1" value={filters.maxPrice}
+            <input type="range" min="100" max="2000" step="50" value={filters.maxPrice}
               onChange={(e) => dispatch(setFilter({ maxPrice: Number(e.target.value) }))}
-              style={{ '--slider-pct': `${((filters.maxPrice - 10) / 40) * 100}%` }} className="w-full" />
+              style={{ '--slider-pct': `${((filters.maxPrice - 100) / 1900) * 100}%` }} className="w-full" />
             <div className="flex justify-between text-[10px] text-[#A8A8A8] dark:text-gray-600 font-semibold mt-1">
-              <span>₹10</span><span>₹50</span>
+              <span>₹100</span><span>₹2000</span>
             </div>
           </div>
         </aside>

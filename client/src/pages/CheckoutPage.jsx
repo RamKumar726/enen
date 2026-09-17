@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { createNewOrder } from '../redux/slices/orderSlice';
 import { paymentService, userService } from '../services/api';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ShieldCheck, 
   CreditCard, 
@@ -16,7 +17,9 @@ import {
   User, 
   Building, 
   Sparkles,
-  Lock
+  Lock,
+  ArrowLeft,
+  Package
 } from 'lucide-react';
 
 const CheckoutPage = () => {
@@ -41,6 +44,19 @@ const CheckoutPage = () => {
   const [paymentMethod, setPaymentMethod] = useState('UPI');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
+  const [showDelivery, setShowDelivery] = useState(false);
+
+  /* Compute estimated delivery date (5–7 business days) */
+  const getDeliveryDate = () => {
+    const date = new Date();
+    let added = 0;
+    while (added < 7) {
+      date.setDate(date.getDate() + 1);
+      const day = date.getDay();
+      if (day !== 0 && day !== 6) added++;
+    }
+    return date.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+  };
 
   useEffect(() => {
     if (user) {
@@ -68,6 +84,11 @@ const CheckoutPage = () => {
       </div>
     );
   }
+
+  /* Show delivery when pincode is 6 valid digits */
+  useEffect(() => {
+    setShowDelivery(/^\d{6}$/.test(shippingForm.pincode));
+  }, [shippingForm.pincode]);
 
   const handleAddressSelect = (addr) => {
     setSelectedAddressId(addr._id);
@@ -209,6 +230,14 @@ const CheckoutPage = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       
+      {/* BACK BUTTON */}
+      <button
+        onClick={() => navigate(-1)}
+        className="inline-flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-[#E85D3D] transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" /> Back
+      </button>
+
       <div className="border-b border-[#282834] pb-6">
         <div className="inline-flex items-center gap-2 text-xs font-bold text-[#E85D3D] uppercase tracking-widest mb-1">
           <Lock className="w-4 h-4 text-emerald-400" />
@@ -333,10 +362,48 @@ const CheckoutPage = () => {
                   type="text"
                   name="pincode"
                   required
+                  maxLength={6}
                   value={shippingForm.pincode}
                   onChange={handleFormChange}
                   className="w-full bg-[#121218] border border-[#282834] rounded-xl p-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#E85D3D]"
                 />
+                {/* Delivery Timeline */}
+                <AnimatePresence>
+                  {showDelivery && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="mt-2 p-3 bg-emerald-500/8 border border-emerald-500/25 rounded-xl space-y-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Truck className="w-3.5 h-3.5 text-emerald-400" />
+                        <p className="text-[10px] font-extrabold text-emerald-400 uppercase tracking-wider">Estimated Delivery</p>
+                      </div>
+                      <p className="text-xs font-black text-white">🗓 {getDeliveryDate()}</p>
+                      <p className="text-[10px] text-gray-400">5–7 business days from order date</p>
+                      {/* Mini stepper */}
+                      <div className="flex items-center gap-1 mt-2 overflow-x-auto pb-1">
+                        {[
+                          { label: 'Placed', icon: '📦', done: true },
+                          { label: 'Packed', icon: '🏷️', done: true },
+                          { label: 'Dispatch', icon: '🚚', done: false },
+                          { label: 'Delivery', icon: '🛵', done: false },
+                          { label: 'Delivered', icon: '✅', done: false },
+                        ].map((s, i) => (
+                          <React.Fragment key={i}>
+                            <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
+                              <span className="text-base">{s.icon}</span>
+                              <span className={`text-[8px] font-bold ${s.done ? 'text-emerald-400' : 'text-gray-500'}`}>{s.label}</span>
+                            </div>
+                            {i < 4 && <div className={`flex-1 h-px min-w-[12px] ${s.done ? 'bg-emerald-500' : 'bg-[#282834]'}`} />}
+                          </React.Fragment>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               <div className="space-y-1">

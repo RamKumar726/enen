@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fetchProductById } from '../redux/slices/productSlice';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useWishlist } from '../context/WishlistContext';
 import { productService } from '../services/api';
 import ProductCard from '../components/ProductCard';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -21,9 +22,206 @@ import {
   Sparkles,
   MessageSquare,
   ArrowLeft,
-  Share2
+  Share2,
+  ChevronLeft,
+  ChevronRight,
+  Heart
 } from 'lucide-react';
 
+/* ─── Image Carousel for Product ─── */
+const ProductImageCarousel = ({ images, productName }) => {
+  const [current, setCurrent] = useState(0);
+  const [direction, setDirection] = useState(1);
+  const [isPaused, setIsPaused] = useState(false);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+
+  // Auto-advance every 3s
+  useEffect(() => {
+    if (images.length <= 1 || isPaused) return;
+    const t = setInterval(() => {
+      setDirection(1);
+      setCurrent((p) => (p + 1) % images.length);
+    }, 3000);
+    return () => clearInterval(t);
+  }, [images.length, isPaused]);
+
+  const goNext = useCallback(() => {
+    setDirection(1);
+    setCurrent((p) => (p + 1) % images.length);
+  }, [images.length]);
+
+  const goPrev = useCallback(() => {
+    setDirection(-1);
+    setCurrent((p) => (p - 1 + images.length) % images.length);
+  }, [images.length]);
+
+  const slideVariants = {
+    enter: (d) => ({ x: d > 0 ? '100%' : '-100%', opacity: 0 }),
+    center: { x: 0, opacity: 1, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } },
+    exit: (d) => ({ x: d > 0 ? '-40%' : '40%', opacity: 0, transition: { duration: 0.3 } }),
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Main slide */}
+      <div
+        className="relative w-full h-[380px] sm:h-[480px] bg-[#18181F] border border-[#282834] rounded-3xl overflow-hidden shadow-2xl group"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+        onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+        onTouchMove={(e) => { touchEndX.current = e.touches[0].clientX; }}
+        onTouchEnd={() => {
+          const diff = touchStartX.current - touchEndX.current;
+          if (Math.abs(diff) > 40) diff > 0 ? goNext() : goPrev();
+        }}
+      >
+        <AnimatePresence custom={direction} mode="popLayout">
+          <motion.img
+            key={current}
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            src={images[current]?.url}
+            alt={`${productName} ${current + 1}`}
+            className="absolute inset-0 w-full h-full object-cover object-center"
+          />
+        </AnimatePresence>
+
+        {/* Badge */}
+        <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+          <span className="px-3 py-1 bg-gradient-to-r from-[#D9480F] to-[#E85D3D] text-white font-extrabold text-[10px] uppercase tracking-wider rounded-lg shadow-md flex items-center gap-1">
+            <Flame className="w-3 h-3" />
+          </span>
+        </div>
+
+        {/* Nav arrows */}
+        {images.length > 1 && (
+          <>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={goPrev}
+              className="absolute left-3 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-black/40 backdrop-blur-sm text-white border border-white/10 hover:bg-[#E85D3D]/80 transition-all opacity-0 group-hover:opacity-100 sm:opacity-100"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={goNext}
+              className="absolute right-3 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-black/40 backdrop-blur-sm text-white border border-white/10 hover:bg-[#E85D3D]/80 transition-all opacity-0 group-hover:opacity-100 sm:opacity-100"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </motion.button>
+          </>
+        )}
+
+        {/* Dot indicators */}
+        {images.length > 1 && (
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-10">
+            {images.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => { setDirection(i > current ? 1 : -1); setCurrent(i); }}
+                className={`rounded-full transition-all duration-300 ${
+                  i === current ? 'w-5 h-1.5 bg-[#E85D3D]' : 'w-1.5 h-1.5 bg-white/40 hover:bg-white/70'
+                }`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Thumbnails row */}
+      {images.length > 1 && (
+        <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none">
+          {images.map((img, idx) => (
+            <button
+              key={idx}
+              onClick={() => { setDirection(idx > current ? 1 : -1); setCurrent(idx); }}
+              className={`relative w-16 h-20 sm:w-20 sm:h-24 rounded-2xl overflow-hidden border-2 transition-all flex-shrink-0 bg-[#18181F] ${
+                current === idx
+                  ? 'border-[#E85D3D] shadow-flame-glow scale-105'
+                  : 'border-[#282834] opacity-60 hover:opacity-100'
+              }`}
+            >
+              <img src={img.url} alt="Thumbnail" className="w-full h-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ─── Pincode Delivery Timeline ─── */
+const getDeliveryDate = () => {
+  const date = new Date();
+  let daysAdded = 0;
+  while (daysAdded < 7) {
+    date.setDate(date.getDate() + 1);
+    const day = date.getDay();
+    if (day !== 0 && day !== 6) daysAdded++;
+  }
+  return date.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+};
+
+const ShipmentTimeline = ({ pincode }) => {
+  const steps = [
+    { label: 'Order Placed', desc: 'Today', icon: '📦', done: true },
+    { label: 'Packed', desc: 'Day 1', icon: '🏷️', done: true },
+    { label: 'Dispatched', desc: 'Day 2–3', icon: '🚚', done: false },
+    { label: 'Out for Delivery', desc: 'Day 6–7', icon: '🛵', done: false },
+    { label: 'Delivered', desc: getDeliveryDate(), icon: '✅', done: false },
+  ];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: 'auto' }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.35 }}
+      className="mt-3 p-4 bg-emerald-500/8 border border-emerald-500/25 rounded-2xl space-y-3"
+    >
+      <div className="flex items-center gap-2">
+        <Truck className="w-4 h-4 text-emerald-400" />
+        <p className="text-xs font-extrabold text-emerald-400 uppercase tracking-wider">
+          Estimated Delivery to {pincode}
+        </p>
+      </div>
+      <p className="text-sm font-black text-white">
+        🗓 {getDeliveryDate()}
+        <span className="ml-2 text-[10px] text-gray-400 font-normal">(5–7 business days)</span>
+      </p>
+
+      {/* Stepper */}
+      <div className="relative flex items-start gap-0 pt-2">
+        {/* Progress line */}
+        <div className="absolute left-4 top-5 bottom-0 w-px bg-[#282834]" />
+        <div className="absolute left-4 top-5 w-px bg-gradient-to-b from-emerald-500 to-[#E85D3D]" style={{ height: '40%' }} />
+
+        <div className="flex flex-col gap-4 w-full">
+          {steps.map((step, i) => (
+            <div key={i} className="flex items-center gap-4 relative">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0 z-10 border-2 transition-all ${
+                step.done ? 'bg-emerald-500/20 border-emerald-500' : 'bg-[#18181F] border-[#282834]'
+              }`}>
+                {step.icon}
+              </div>
+              <div>
+                <p className={`text-xs font-bold ${step.done ? 'text-white' : 'text-gray-500'}`}>{step.label}</p>
+                <p className="text-[10px] text-gray-500">{step.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+/* ─── Main Component ─── */
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -31,13 +229,17 @@ const ProductDetail = () => {
   const { currentProduct, detailLoading, items } = useSelector((state) => state.products);
   const { addToCart } = useCart();
   const { user, isAuthenticated } = useAuth();
+  const { isWishlisted, toggleWishlist } = useWishlist();
 
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState('L');
   const [selectedColor, setSelectedColor] = useState('Obsidian Black');
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
   const [isAdded, setIsAdded] = useState(false);
+
+  // Pincode delivery state
+  const [pincode, setPincode] = useState('');
+  const [showTimeline, setShowTimeline] = useState(false);
 
   // Review Form State
   const [reviewRating, setReviewRating] = useState(5);
@@ -60,6 +262,11 @@ const ProductDetail = () => {
       setSelectedColor(currentProduct.colors[0].name);
     }
   }, [currentProduct]);
+
+  // Show delivery timeline when pincode is 6 digits
+  useEffect(() => {
+    setShowTimeline(pincode.length === 6 && /^\d{6}$/.test(pincode));
+  }, [pincode]);
 
   if (detailLoading || !currentProduct) {
     return (
@@ -111,52 +318,25 @@ const ProductDetail = () => {
     .filter(p => (p._id || p.id) !== (currentProduct._id || currentProduct.id))
     .slice(0, 4);
 
+  const wishlisted = isWishlisted(currentProduct._id || currentProduct.id);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
       
-      {/* BACK BUTTON */}
-      <Link
-        to="/shop"
+      {/* BACK BUTTON — uses browser history */}
+      <button
+        onClick={() => navigate(-1)}
         className="inline-flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-[#E85D3D] transition-colors"
       >
-        <ArrowLeft className="w-4 h-4" /> Back to Vault
-      </Link>
+        <ArrowLeft className="w-4 h-4" /> Back
+      </button>
 
       {/* PRODUCT TOP HERO SECTION */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
         
-        {/* LEFT COLUMN: MULTI-IMAGE CAROUSEL & THUMBNAILS */}
-        <div className="lg:col-span-6 space-y-4">
-          <div className="relative w-full h-[480px] bg-[#18181F] border border-[#282834] rounded-3xl overflow-hidden shadow-2xl group">
-            <img
-              src={images[selectedImageIndex]?.url}
-              alt={currentProduct.name}
-              className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 filter brightness-95"
-            />
-
-            <span className="absolute top-4 left-4 px-3 py-1 bg-gradient-to-r from-[#D9480F] to-[#E85D3D] text-white font-extrabold text-[10px] uppercase tracking-wider rounded-lg shadow-md flex items-center gap-1">
-              <Flame className="w-3 h-3" /> {currentProduct.category}
-            </span>
-          </div>
-
-          {/* THUMBNAILS ROW */}
-          {images.length > 1 && (
-            <div className="flex items-center gap-3 overflow-x-auto pb-2">
-              {images.map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSelectedImageIndex(idx)}
-                  className={`relative w-20 h-24 rounded-2xl overflow-hidden border-2 transition-all flex-shrink-0 bg-[#18181F] ${
-                    selectedImageIndex === idx
-                      ? 'border-[#E85D3D] shadow-flame-glow scale-105'
-                      : 'border-[#282834] opacity-60 hover:opacity-100'
-                  }`}
-                >
-                  <img src={img.url} alt="Thumbnail" className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
+        {/* LEFT COLUMN: SWIPE CAROUSEL */}
+        <div className="lg:col-span-6">
+          <ProductImageCarousel images={images} productName={currentProduct.name} />
         </div>
 
         {/* RIGHT COLUMN: PRODUCT INFO & PURCHASE CONTROLS */}
@@ -166,10 +346,25 @@ const ProductDetail = () => {
               <span className="text-xs font-bold text-[#FF7A00] uppercase tracking-wider">
                 {currentProduct.animeSeries || 'ENEN Exclusive'}
               </span>
-              <div className="flex items-center gap-1.5 text-amber-400 bg-[#18181F] border border-[#282834] px-3 py-1 rounded-xl text-xs font-bold">
-                <Star className="w-3.5 h-3.5 fill-current" />
-                <span className="text-white">{currentProduct.averageRating || 4.9}</span>
-                <span className="text-gray-400 text-[11px]">({currentProduct.numReviews || 12} Reviews)</span>
+              <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1 text-amber-400 bg-[#18181F] border border-[#282834] px-3 py-1 rounded-xl text-xs font-bold">
+                  <Star className="w-3.5 h-3.5 fill-current" />
+                  <span className="text-white">{currentProduct.averageRating || 4.9}</span>
+                  <span className="text-gray-400 text-[11px]">({currentProduct.numReviews || 12} Reviews)</span>
+                </div>
+                {/* Wishlist toggle */}
+                <motion.button
+                  whileTap={{ scale: 0.85 }}
+                  onClick={() => toggleWishlist(currentProduct)}
+                  className={`p-2 rounded-xl border transition-all ${
+                    wishlisted
+                      ? 'bg-[#E85D3D]/15 border-[#E85D3D]/50 text-[#E85D3D]'
+                      : 'bg-[#18181F] border-[#282834] text-gray-400 hover:border-[#E85D3D]/40 hover:text-[#E85D3D]'
+                  }`}
+                  title={wishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                >
+                  <Heart className={`w-4 h-4 transition-all ${wishlisted ? 'fill-current' : ''}`} />
+                </motion.button>
               </div>
             </div>
 
@@ -249,6 +444,36 @@ const ProductDetail = () => {
             </div>
           </div>
 
+          {/* PINCODE DELIVERY */}
+          <div className="space-y-2 pt-1">
+            <label className="text-xs font-bold uppercase text-gray-400 flex items-center gap-2">
+              <Truck className="w-3.5 h-3.5 text-[#FF7A00]" /> Check Delivery Date
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                maxLength={6}
+                placeholder="Enter 6-digit Pincode"
+                value={pincode}
+                onChange={(e) => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                className="flex-1 bg-[#18181F] border border-[#282834] rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#E85D3D] transition-colors"
+              />
+              {pincode.length === 6 && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="text-emerald-400 text-xs font-bold px-3 py-2.5 bg-emerald-500/10 rounded-xl border border-emerald-500/30"
+                >
+                  ✓ Valid
+                </motion.span>
+              )}
+            </div>
+
+            <AnimatePresence>
+              {showTimeline && <ShipmentTimeline pincode={pincode} />}
+            </AnimatePresence>
+          </div>
+
           {/* QUANTITY & ACTIONS */}
           <div className="space-y-4 pt-2">
             <div className="flex items-center gap-4">
@@ -278,13 +503,9 @@ const ProductDetail = () => {
                 }`}
               >
                 {isAdded ? (
-                  <>
-                    <Check className="w-5 h-5" /> Added to Cart!
-                  </>
+                  <><Check className="w-5 h-5" /> Added to Cart!</>
                 ) : (
-                  <>
-                    <ShoppingBag className="w-5 h-5" /> ADD TO CART
-                  </>
+                  <><ShoppingBag className="w-5 h-5" /> ADD TO CART</>
                 )}
               </motion.button>
             </div>
@@ -316,7 +537,7 @@ const ProductDetail = () => {
 
       {/* PRODUCT TABS: Description, Fabric Specs, Customer Reviews */}
       <div className="bg-[#18181F] border border-[#282834] rounded-3xl p-6 sm:p-8 space-y-6">
-        <div className="flex items-center gap-4 border-b border-[#282834] pb-4">
+        <div className="flex items-center gap-4 border-b border-[#282834] pb-4 overflow-x-auto">
           {[
             { id: 'description', label: 'Anime Lore & Design' },
             { id: 'specs', label: 'Fabric & Print Specs' },
@@ -325,7 +546,7 @@ const ProductDetail = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`text-sm font-bold pb-2 transition-colors relative ${
+              className={`text-sm font-bold pb-2 transition-colors relative whitespace-nowrap ${
                 activeTab === tab.id ? 'text-[#E85D3D]' : 'text-gray-400 hover:text-white'
               }`}
             >

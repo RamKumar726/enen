@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import ProductGrid from '../components/ProductGrid';
 import { fetchProducts } from '../redux/slices/productSlice';
@@ -40,6 +40,7 @@ const collectionBanners = {
 
 const CollectionPage = () => {
   const { collectionName } = useParams();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const { items, loading } = useSelector((state) => state.products);
 
@@ -60,12 +61,12 @@ const CollectionPage = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
       
       {/* BACK NAVIGATION */}
-      <Link
-        to="/shop"
+      <button
+        onClick={() => navigate(-1)}
         className="inline-flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-[#E85D3D] transition-colors"
       >
-        <ArrowLeft className="w-4 h-4" /> Back to Vault
-      </Link>
+        <ArrowLeft className="w-4 h-4" /> Back
+      </button>
 
       {/* COLLECTION BANNER HEADER */}
       <div className="relative rounded-3xl overflow-hidden border border-[#E85D3D]/40 shadow-2xl h-80 flex items-center p-8 sm:p-12">

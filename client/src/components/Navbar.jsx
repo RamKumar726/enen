@@ -4,11 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShoppingBag, Search, User, Menu, X, LogOut,
   PackageCheck, UserCheck, ChevronDown, LayoutDashboard,
-  Sparkles, Layers, Shirt, Sun, Moon, Flame
+  Sparkles, Layers, Shirt, Sun, Moon, Flame, Heart, Package, ArrowRight
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useTheme } from '../context/ThemeContext';
+import { useWishlist } from '../context/WishlistContext';
 import { clanService } from '../services/api';
 import ENENLogo from './ENENLogo';
 
@@ -56,13 +57,16 @@ const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const { totalQuantity, toggleCart } = useCart();
   const { isDark, toggleTheme } = useTheme();
+  const { wishlistCount } = useWishlist();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
   const [isCollectionMenuOpen, setIsCollectionMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isTrackOpen, setIsTrackOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [trackOrderId, setTrackOrderId] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
 
   const navigate = useNavigate();
@@ -77,6 +81,7 @@ const Navbar = () => {
   useEffect(() => {
     setIsMobileMenuOpen(false);
     setIsUserMenuOpen(false);
+    setIsTrackOpen(false);
   }, [location.pathname]);
 
   const handleSearchSubmit = (e) => {
@@ -85,6 +90,15 @@ const Navbar = () => {
       navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
       setIsSearchOpen(false);
       setSearchQuery('');
+    }
+  };
+
+  const handleTrackOrder = (e) => {
+    e.preventDefault();
+    if (trackOrderId.trim()) {
+      navigate(`/orders?track=${encodeURIComponent(trackOrderId.trim())}`);
+      setIsTrackOpen(false);
+      setTrackOrderId('');
     }
   };
 
@@ -182,7 +196,7 @@ const Navbar = () => {
               </button>
               <AnimatePresence>
                 {isCollectionMenuOpen && (
-                  <motion.div variants={dropdownVariants} initial="hidden" animate="visible" exit="exit" className={`left-0 w-60 ${dropdownCls}`}>
+                  <motion.div variants={dropdownVariants} initial="hidden" animate="visible" exit="exit" className={`left-0 w-64 ${dropdownCls}`}>
                     {collections.map((col, i) => (
                       <motion.div key={col.value} custom={i} variants={itemVariants} initial="hidden" animate="visible">
                         <Link to={`/collection/${encodeURIComponent(col.value)}`} onClick={() => setIsCollectionMenuOpen(false)}
@@ -195,6 +209,13 @@ const Navbar = () => {
                         </Link>
                       </motion.div>
                     ))}
+                    {/* View all clans link */}
+                    <div className="border-t border-[#EAE6DD] dark:border-[#282834] mt-1 pt-1">
+                      <Link to="/clans" onClick={() => setIsCollectionMenuOpen(false)}
+                        className="flex items-center justify-between px-3 py-2 text-[10px] font-black text-[#E85D3D] hover:bg-[#E85D3D]/10 rounded-xl transition-all uppercase tracking-wider">
+                        View All Clans <ArrowRight className="w-3 h-3" />
+                      </Link>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -231,6 +252,70 @@ const Navbar = () => {
                 )}
               </AnimatePresence>
             </motion.button>
+
+            {/* 📦 Track Order */}
+            <div className="relative hidden sm:block">
+              <motion.button
+                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                onClick={() => setIsTrackOpen(!isTrackOpen)}
+                title="Track Order"
+                className="p-2.5 text-[#7A7A7A] dark:text-gray-400 hover:text-[#1C1C1C] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl transition-all border border-transparent hover:border-[#DDD9D0] dark:hover:border-white/10"
+              >
+                <Package className="w-5 h-5" />
+              </motion.button>
+              <AnimatePresence>
+                {isTrackOpen && (
+                  <motion.div
+                    variants={dropdownVariants} initial="hidden" animate="visible" exit="exit"
+                    className={`right-0 w-72 ${dropdownCls}`}
+                  >
+                    <div className="p-3 space-y-3">
+                      <div className="flex items-center gap-2 text-[#E85D3D]">
+                        <Package className="w-4 h-4" />
+                        <span className="text-xs font-extrabold uppercase tracking-wider">Track Your Order</span>
+                      </div>
+                      <form onSubmit={handleTrackOrder} className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Enter Order ID..."
+                          value={trackOrderId}
+                          onChange={(e) => setTrackOrderId(e.target.value)}
+                          autoFocus
+                          className="flex-1 bg-black/5 dark:bg-white/5 border border-[#DDD9D0] dark:border-white/10 focus:border-[#E85D3D]/60 rounded-xl py-2 px-3 text-xs text-[#1C1C1C] dark:text-white placeholder-[#A8A8A8] dark:placeholder-gray-500 focus:outline-none transition-all"
+                        />
+                        <button type="submit" className="px-3 py-2 bg-gradient-to-r from-[#D9480F] to-[#E85D3D] text-white text-xs font-bold rounded-xl hover:shadow-flame-glow transition-all flex-shrink-0">
+                          Go
+                        </button>
+                      </form>
+                      {isAuthenticated && (
+                        <Link to="/orders" onClick={() => setIsTrackOpen(false)} className="block text-center text-[10px] text-[#E85D3D] hover:underline font-semibold">
+                          View all my orders →
+                        </Link>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* ♥ Wishlist */}
+            <Link to="/wishlist"
+              className="relative p-2.5 text-[#7A7A7A] dark:text-gray-400 hover:text-[#E85D3D] dark:hover:text-[#E85D3D] hover:bg-black/5 dark:hover:bg-white/5 rounded-xl transition-all border border-transparent hover:border-[#E85D3D]/30 group"
+              title="Wishlist"
+            >
+              <Heart className="w-5 h-5 group-hover:scale-110 transition-transform" />
+              <AnimatePresence>
+                {wishlistCount > 0 && (
+                  <motion.span
+                    key="wishbadge" initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                    className="absolute -top-1 -right-1 bg-gradient-to-br from-[#E85D3D] to-[#FF7A00] text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg"
+                  >
+                    {wishlistCount}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </Link>
 
             {/* Search */}
             <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setIsSearchOpen(true)}
@@ -300,6 +385,13 @@ const Navbar = () => {
                           className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-[#4A4A4A] dark:text-gray-300 hover:text-[#1C1C1C] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl transition-colors">
                           <PackageCheck className="w-4 h-4 text-[#FF7A00]" /> My Orders
                         </Link>
+                        <Link to="/wishlist" onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-[#4A4A4A] dark:text-gray-300 hover:text-[#1C1C1C] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl transition-colors">
+                          <Heart className="w-4 h-4 text-[#E85D3D]" /> My Wishlist
+                          {wishlistCount > 0 && (
+                            <span className="ml-auto text-[10px] font-black px-1.5 py-0.5 bg-[#E85D3D]/15 text-[#E85D3D] rounded-md">{wishlistCount}</span>
+                          )}
+                        </Link>
                         <div className="border-t border-[#EAE6DD] dark:border-[#282834] mt-1 pt-1">
                           <button onClick={() => { logout(); setIsUserMenuOpen(false); }}
                             className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-500 dark:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors">
@@ -354,6 +446,36 @@ const Navbar = () => {
                   )}
                 </div>
 
+                {/* Track order — mobile */}
+                <div className="space-y-2">
+                  <span className="text-[10px] uppercase font-extrabold text-[#E85D3D] tracking-widest block px-3">Track Order</span>
+                  <form onSubmit={handleTrackOrder} className="flex gap-2 px-1">
+                    <input
+                      type="text"
+                      placeholder="Enter Order ID..."
+                      value={trackOrderId}
+                      onChange={(e) => setTrackOrderId(e.target.value)}
+                      className="flex-1 bg-black/5 dark:bg-white/5 border border-[#DDD9D0] dark:border-white/10 focus:border-[#E85D3D]/60 rounded-xl py-2.5 px-3 text-xs text-[#1C1C1C] dark:text-white placeholder-[#A8A8A8] dark:placeholder-gray-500 focus:outline-none transition-all"
+                    />
+                    <button type="submit" className="px-4 py-2.5 bg-gradient-to-r from-[#D9480F] to-[#E85D3D] text-white text-xs font-bold rounded-xl flex-shrink-0">
+                      Track
+                    </button>
+                  </form>
+                </div>
+
+                {/* Wishlist + Orders quick links */}
+                <div className="grid grid-cols-2 gap-2">
+                  <Link to="/wishlist" onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-2 text-xs font-semibold text-[#4A4A4A] dark:text-gray-300 bg-black/5 dark:bg-white/5 px-3 py-2.5 rounded-xl transition-colors hover:bg-[#E85D3D]/10 hover:text-[#E85D3D]">
+                    <Heart className="w-4 h-4 text-[#E85D3D]" /> Wishlist
+                    {wishlistCount > 0 && <span className="ml-auto text-[10px] font-black px-1.5 bg-[#E85D3D]/15 text-[#E85D3D] rounded">{wishlistCount}</span>}
+                  </Link>
+                  <Link to="/orders" onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-2 text-xs font-semibold text-[#4A4A4A] dark:text-gray-300 bg-black/5 dark:bg-white/5 px-3 py-2.5 rounded-xl transition-colors hover:bg-[#E85D3D]/10 hover:text-[#E85D3D]">
+                    <PackageCheck className="w-4 h-4 text-[#FF7A00]" /> My Orders
+                  </Link>
+                </div>
+
                 {/* Theme toggle in mobile */}
                 <button onClick={toggleTheme}
                   className="flex items-center gap-3 px-3 py-2.5 w-full text-sm font-semibold text-[#4A4A4A] dark:text-gray-300 bg-black/5 dark:bg-white/5 rounded-xl border border-[#EAE6DD] dark:border-[#282834]">
@@ -374,7 +496,10 @@ const Navbar = () => {
                 </div>
 
                 <div>
-                  <span className="text-[10px] uppercase font-extrabold text-[#FF7A00] tracking-widest block mb-2 px-3">Collections</span>
+                  <div className="flex items-center justify-between px-3 mb-2">
+                    <span className="text-[10px] uppercase font-extrabold text-[#FF7A00] tracking-widest">Collections</span>
+                    <Link to="/clans" onClick={() => setIsMobileMenuOpen(false)} className="text-[10px] text-[#E85D3D] font-bold hover:underline">View All →</Link>
+                  </div>
                   <div className="space-y-0.5">
                     {collections.map((col) => (
                       <Link key={col.value} to={`/collection/${encodeURIComponent(col.value)}`} onClick={() => setIsMobileMenuOpen(false)}

@@ -20,6 +20,8 @@ import ProfilePage from './pages/ProfilePage';
 import OrdersPage from './pages/OrdersPage';
 import NotFound from './pages/NotFound';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import WishlistPage from './pages/WishlistPage';
+import ClansPage from './pages/ClansPage';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsPage from './pages/TermsPage';
 import ReturnPolicy from './pages/ReturnPolicy';
@@ -86,6 +88,8 @@ function App() {
                   <Route path="/terms" element={<TermsPage />} />
                   <Route path="/return-policy" element={<ReturnPolicy />} />
                   <Route path="/shipping-policy" element={<ShippingPolicy />} />
+                  <Route path="/clans" element={<ClansPage />} />
+                  <Route path="/wishlist" element={<WishlistPage />} />
 
                   <Route
                     path="/checkout"

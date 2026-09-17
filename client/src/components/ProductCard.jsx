@@ -3,13 +3,14 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'framer-motion';
 import { Star, ShoppingBag, Flame, Check, Sparkles, Heart } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
+  const { isWishlisted, toggleWishlist } = useWishlist();
   const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || 'M');
   const [isAdded, setIsAdded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [wishlisted, setWishlisted] = useState(false);
   const cardRef = useRef(null);
 
   /* Subtle tilt — desktop only, disabled on touch */
@@ -70,10 +71,10 @@ const ProductCard = ({ product }) => {
         {/* Wishlist */}
         <motion.button
           whileTap={{ scale: 0.8 }}
-          onClick={e => { e.preventDefault(); e.stopPropagation(); setWishlisted(v => !v); }}
+          onClick={e => { e.preventDefault(); e.stopPropagation(); toggleWishlist(product); }}
           className="absolute top-2 right-2 z-10 p-1.5 rounded-full bg-white/80 dark:bg-black/60 backdrop-blur-sm shadow-sm"
         >
-          <Heart className={`w-3.5 h-3.5 transition-colors ${wishlisted ? 'text-[#E85D3D] fill-current' : 'text-[#A8A8A8]'}`} />
+          <Heart className={`w-3.5 h-3.5 transition-colors ${isWishlisted(product._id || product.id) ? 'text-[#E85D3D] fill-current' : 'text-[#A8A8A8]'}`} />
         </motion.button>
 
         {/* Badges */}

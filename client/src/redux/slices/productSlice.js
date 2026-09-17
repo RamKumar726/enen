@@ -41,7 +41,7 @@ const productSlice = createSlice({
       collection: 'All',
       search: '',
       minPrice: 0,
-      maxPrice: 50,
+      maxPrice: 2000,
       size: '',
       color: '',
       sort: 'newest'
@@ -57,7 +57,7 @@ const productSlice = createSlice({
         collection: 'All',
         search: '',
         minPrice: 0,
-        maxPrice: 50,
+        maxPrice: 2000,
         size: '',
         color: '',
         sort: 'newest'
