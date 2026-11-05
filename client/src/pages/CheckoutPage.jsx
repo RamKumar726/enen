@@ -26,7 +26,7 @@ const CheckoutPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useAuth();
-  const { cartItems, subtotal, discountAmount, taxAmount, shippingAmount, grandTotal, clearCart } = useCart();
+  const { cartItems, subtotal, discountAmount, discountCode, taxAmount, shippingAmount, grandTotal, clearCart } = useCart();
 
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState('');
@@ -41,7 +41,7 @@ const CheckoutPage = () => {
     country: 'India'
   });
 
-  const [paymentMethod, setPaymentMethod] = useState('UPI');
+  const [paymentMethod, setPaymentMethod] = useState('Online');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
   const [showDelivery, setShowDelivery] = useState(false);
@@ -71,6 +71,10 @@ const CheckoutPage = () => {
     }
   }, [user]);
 
+  useEffect(() => {
+    setShowDelivery(/^\d{6}$/.test(shippingForm.pincode));
+  }, [shippingForm.pincode]);
+
   if (cartItems.length === 0) {
     return (
       <div className="max-w-md mx-auto py-20 text-center space-y-4">
@@ -84,11 +88,6 @@ const CheckoutPage = () => {
       </div>
     );
   }
-
-  /* Show delivery when pincode is 6 valid digits */
-  useEffect(() => {
-    setShowDelivery(/^\d{6}$/.test(shippingForm.pincode));
-  }, [shippingForm.pincode]);
 
   const handleAddressSelect = (addr) => {
     setSelectedAddressId(addr._id);
@@ -110,34 +109,25 @@ const CheckoutPage = () => {
   const handleRazorpayPayment = async (orderPayload) => {
     try {
       // 1. Create Razorpay order on backend
-      const rzpRes = await paymentService.createRazorpayOrder({ amount: grandTotal });
-      
-      const razorpayKey = rzpRes.key || import.meta.env.VITE_RAZORPAY_KEY || 'rzp_test_ENENBlazeKey123';
+      const rzpRes = await paymentService.createRazorpayOrder(orderPayload);
 
       const options = {
-        key: razorpayKey,
+        key: rzpRes.key,
         amount: rzpRes.amount,
-        currency: 'INR',
+        currency: rzpRes.currency,
         name: 'ENEN Apparel Co.',
         description: 'UNLEASH THE BLAZE - Order Checkout',
         image: '/favicon.svg',
-        order_id: rzpRes.orderId,
+        order_id: rzpRes.razorpayOrderId,
         handler: async function (response) {
           try {
             // Verify payment
             await paymentService.verifyRazorpayPayment({
-              razorpay_order_id: response.razorpay_order_id || rzpRes.orderId,
-              razorpay_payment_id: response.razorpay_payment_id || 'pay_' + Date.now(),
-              razorpay_signature: response.razorpay_signature || 'mock_sig'
+              orderId: rzpRes.orderId,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
             });
-
-            // Dispatch order creation
-            const created = await dispatch(createNewOrder({
-              ...orderPayload,
-              paymentStatus: 'Paid',
-              paymentId: response.razorpay_payment_id || 'pay_' + Date.now()
-            }));
-
             clearCart();
             setIsSubmitting(false);
             navigate('/orders');
@@ -153,7 +143,8 @@ const CheckoutPage = () => {
         },
         theme: {
           color: '#E85D3D'
-        }
+        },
+        modal: { ondismiss: () => setIsSubmitting(false) }
       };
 
       // Check if Razorpay SDK loaded in window
@@ -161,17 +152,8 @@ const CheckoutPage = () => {
         const rzp = new window.Razorpay(options);
         rzp.open();
       } else {
-        // Fallback simulation when SDK script is blocked or offline
-        setTimeout(async () => {
-          await dispatch(createNewOrder({
-            ...orderPayload,
-            paymentStatus: 'Paid',
-            paymentId: 'pay_sim_' + Date.now()
-          }));
-          clearCart();
-          setIsSubmitting(false);
-          navigate('/orders');
-        }, 1200);
+        setErrorMsg('Secure payment checkout did not load. Please refresh and try again.');
+        setIsSubmitting(false);
       }
     } catch (err) {
       setErrorMsg('Razorpay error: ' + err.message);
@@ -194,10 +176,10 @@ const CheckoutPage = () => {
       productId: i.product?._id || i.product?.id || i.id,
       name: i.product?.name || 'ENEN Graphic Tee',
       image: i.product?.images?.[0]?.url || 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?auto=format&fit=crop&w=800&q=80',
-      price: i.product?.price || i.price || 24.99,
+      price: i.product?.price || i.price || 0,
       quantity: i.quantity,
-      size: i.size || 'L',
-      color: i.color || 'Black'
+      size: i.size || i.product?.sizes?.[0] || 'M',
+      color: i.color || i.product?.colors?.[0]?.name || 'Black'
     }));
 
     const orderPayload = {
@@ -205,18 +187,19 @@ const CheckoutPage = () => {
       shippingAddress: shippingForm,
       billingAddress: shippingForm,
       paymentMethod,
+      promoCode: discountCode,
       totalAmount: grandTotal,
       taxPrice: taxAmount,
       shippingPrice: shippingAmount,
       itemsPrice: subtotal - discountAmount
     };
 
-    if (paymentMethod === 'UPI') {
+    if (paymentMethod === 'Online') {
       await handleRazorpayPayment(orderPayload);
     } else {
       // Cash on Delivery
       try {
-        await dispatch(createNewOrder(orderPayload));
+        await dispatch(createNewOrder(orderPayload)).unwrap();
         clearCart();
         setIsSubmitting(false);
         navigate('/orders');
@@ -427,7 +410,7 @@ const CheckoutPage = () => {
 
             <div className="space-y-3">
               {[
-                { id: 'UPI', label: 'UPI Payment (GPay, PhonePe, Paytm, QR / UPI ID)', desc: 'Instant & 100% secure payment via Razorpay UPI', recommended: true },
+                { id: 'Online', label: 'Online Payment', desc: 'Pay securely using the payment methods enabled in Razorpay', recommended: true },
                 { id: 'Cash on Delivery', label: 'Cash on Delivery (COD)', desc: 'Pay cash when package arrives at your doorstep' }
               ].map((pm) => (
                 <div
@@ -503,7 +486,7 @@ const CheckoutPage = () => {
               </div>
             )}
             <div className="flex justify-between">
-              <span>Tax (18%)</span>
+              <span>GST included in item prices (5% / 12%)</span>
               <span className="font-bold text-white">₹{taxAmount.toFixed(2)}</span>
             </div>
             <div className="flex justify-between">

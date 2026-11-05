@@ -1,14 +1,14 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
-import { fetchUserOrders } from '../redux/slices/orderSlice';
+import { fetchUserOrders, setOrdersPage } from '../redux/slices/orderSlice';
 import { orderService } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { PackageCheck, Flame, Printer, XCircle, RotateCcw, AlertTriangle, CheckCircle2, RefreshCw, Search } from 'lucide-react';
 
 const OrdersPage = () => {
   const dispatch = useDispatch();
-  const { orders, loading } = useSelector((state) => state.orders);
+  const { orders, loading, page, pages, totalOrders } = useSelector((state) => state.orders);
   const location = useLocation();
   const trackedOrderRef = useRef(null);
 
@@ -28,8 +28,8 @@ const OrdersPage = () => {
   const [bannerType, setBannerType] = useState('success');
 
   useEffect(() => {
-    dispatch(fetchUserOrders());
-  }, [dispatch]);
+    dispatch(fetchUserOrders(page));
+  }, [dispatch, page]);
 
   // When orders load and there's a tracked ID, scroll to it
   useEffect(() => {
@@ -58,7 +58,7 @@ const OrdersPage = () => {
         showBanner(res.message || 'Order cancelled successfully');
         setCancelModalOrder(null);
         setCancelReason('');
-        dispatch(fetchUserOrders());
+        dispatch(fetchUserOrders(page));
       }
     } catch (err) {
       showBanner(err.response?.data?.message || err.message, 'error');
@@ -81,7 +81,7 @@ const OrdersPage = () => {
         setReturnModalOrder(null);
         setReturnReason('');
         setCustomerUpi('');
-        dispatch(fetchUserOrders());
+        dispatch(fetchUserOrders(page));
       }
     } catch (err) {
       showBanner(err.response?.data?.message || err.message, 'error');
@@ -92,10 +92,17 @@ const OrdersPage = () => {
 
   const handlePrintInvoice = (order) => {
     const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      showBanner('Allow popups to print your invoice.', 'error');
+      return;
+    }
+    const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[char]));
     printWindow.document.write(`
       <html>
         <head>
-          <title>ENEN Invoice - ${order.trackingNumber || order._id}</title>
+          <title>ENEN Invoice - ${escapeHtml(order.trackingNumber || order._id)}</title>
           <style>
             body { font-family: 'Helvetica', sans-serif; padding: 40px; color: #111; }
             .header { display: flex; justify-content: space-between; border-b: 2px solid #E85D3D; padding-bottom: 20px; }
@@ -114,14 +121,14 @@ const OrdersPage = () => {
             </div>
             <div>
               <h3>INVOICE</h3>
-              <p>Order ID: ${order._id}</p>
-              <p>Tracking: ${order.trackingNumber || 'N/A'}</p>
+              <p>Order ID: ${escapeHtml(order._id)}</p>
+              <p>Tracking: ${escapeHtml(order.trackingNumber || 'N/A')}</p>
               <p>Date: ${new Date(order.createdAt).toLocaleDateString()}</p>
             </div>
           </div>
 
           <h4>Shipping Address:</h4>
-          <p>${order.shippingAddress?.name || ''}<br/>${order.shippingAddress?.street || ''}, ${order.shippingAddress?.city || ''}</p>
+          <p>${escapeHtml(order.shippingAddress?.name)}<br/>${escapeHtml(order.shippingAddress?.street)}, ${escapeHtml(order.shippingAddress?.city)}</p>
 
           <table class="table">
             <thead>
@@ -136,10 +143,10 @@ const OrdersPage = () => {
             <tbody>
               ${(order.products || []).map(p => `
                 <tr>
-                  <td>${p.name}</td>
-                  <td>${p.size}</td>
-                  <td>${p.quantity}</td>
-                  <td>&#8377;${p.price}</td>
+                  <td>${escapeHtml(p.name)}</td>
+                  <td>${escapeHtml(p.size)}</td>
+                  <td>${escapeHtml(p.quantity)}</td>
+                  <td>&#8377;${escapeHtml(p.price)}</td>
                   <td>&#8377;${(p.price * p.quantity).toFixed(2)}</td>
                 </tr>
               `).join('')}
@@ -147,7 +154,7 @@ const OrdersPage = () => {
           </table>
 
           <div class="total">
-            Total Amount Paid: &#8377;${(order.totalAmount || 0).toFixed(2)} (${order.paymentMethod})
+            Total Amount Paid: &#8377;${(order.totalAmount || 0).toFixed(2)} (${escapeHtml(order.paymentMethod)})
           </div>
         </body>
       </html>
@@ -364,6 +371,15 @@ const OrdersPage = () => {
             </div>
             );
           })}
+          {pages > 1 && (
+            <div className="flex items-center justify-between rounded-2xl border border-[#282834] bg-[#18181F] p-4 text-xs text-gray-300">
+              <span>Page {page} of {pages} · {totalOrders} orders</span>
+              <div className="flex gap-2">
+                <button disabled={page <= 1} onClick={() => dispatch(setOrdersPage(page - 1))} className="rounded-lg border border-[#282834] px-3 py-2 disabled:opacity-40">Previous</button>
+                <button disabled={page >= pages} onClick={() => dispatch(setOrdersPage(page + 1))} className="rounded-lg border border-[#282834] px-3 py-2 disabled:opacity-40">Next</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -381,7 +397,7 @@ const OrdersPage = () => {
             <form onSubmit={handleCancelSubmit} className="space-y-4">
               <p className="text-xs text-gray-300">
                 Are you sure you want to cancel order <strong className="text-white">#{cancelModalOrder._id}</strong>?
-                {cancelModalOrder.paymentMethod === 'UPI' && cancelModalOrder.paymentStatus === 'Paid' && (
+                {['Online', 'UPI'].includes(cancelModalOrder.paymentMethod) && cancelModalOrder.paymentStatus === 'Paid' && (
                   <span className="block mt-1 text-amber-400 font-semibold">
                     ⚡ A full refund of ₹{cancelModalOrder.totalAmount} will be initiated to your payment account.
                   </span>

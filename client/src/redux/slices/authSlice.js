@@ -1,8 +1,14 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { authService, userService } from '../../services/api';
+import { authService, userService, setAccessToken } from '../../services/api';
 
-const savedUser = JSON.parse(localStorage.getItem('enen_user') || 'null');
-const savedToken = localStorage.getItem('enen_token') || null;
+export const refreshSession = createAsyncThunk('auth/refreshSession', async (_, { rejectWithValue }) => {
+  try {
+    const response = await authService.refreshToken();
+    if (!response.success) return rejectWithValue('Session expired');
+    setAccessToken(response.token);
+    return response;
+  } catch (err) { return rejectWithValue(err.message || 'Session expired'); }
+});
 
 export const loginUser = createAsyncThunk(
   'auth/login',
@@ -10,8 +16,7 @@ export const loginUser = createAsyncThunk(
     try {
       const response = await authService.login(credentials);
       if (response.success) {
-        localStorage.setItem('enen_token', response.token);
-        localStorage.setItem('enen_user', JSON.stringify(response.user));
+        setAccessToken(response.token);
         return response;
       }
       return rejectWithValue(response.message);
@@ -27,8 +32,7 @@ export const registerUser = createAsyncThunk(
     try {
       const response = await authService.register(userData);
       if (response.success) {
-        localStorage.setItem('enen_token', response.token);
-        localStorage.setItem('enen_user', JSON.stringify(response.user));
+        setAccessToken(response.token);
         return response;
       }
       return rejectWithValue(response.message);
@@ -44,7 +48,6 @@ export const fetchUserProfile = createAsyncThunk(
     try {
       const response = await userService.getProfile();
       if (response.success) {
-        localStorage.setItem('enen_user', JSON.stringify(response.user));
         return response.user;
       }
       return rejectWithValue('Failed to fetch profile');
@@ -57,10 +60,10 @@ export const fetchUserProfile = createAsyncThunk(
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
-    user: savedUser,
-    token: savedToken,
-    isAuthenticated: !!savedToken,
-    loading: false,
+    user: null,
+    token: null,
+    isAuthenticated: false,
+    loading: true,
     error: null,
     message: null
   },
@@ -71,8 +74,7 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.error = null;
       state.message = 'Logged out successfully';
-      localStorage.removeItem('enen_token');
-      localStorage.removeItem('enen_user');
+      setAccessToken(null);
     },
     clearAuthError: (state) => {
       state.error = null;
@@ -80,11 +82,16 @@ const authSlice = createSlice({
     },
     updateUserLocal: (state, action) => {
       state.user = { ...state.user, ...action.payload };
-      localStorage.setItem('enen_user', JSON.stringify(state.user));
     }
   },
   extraReducers: (builder) => {
     builder
+      .addCase(refreshSession.fulfilled, (state, action) => {
+        state.loading = false; state.token = action.payload.token; state.user = action.payload.user; state.isAuthenticated = true;
+      })
+      .addCase(refreshSession.rejected, (state) => {
+        state.loading = false; state.token = null; state.user = null; state.isAuthenticated = false;
+      })
       // Login
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
@@ -95,6 +102,7 @@ const authSlice = createSlice({
         state.user = action.payload.user;
         state.token = action.payload.token;
         state.isAuthenticated = true;
+        setAccessToken(action.payload.token);
         state.message = action.payload.message;
       })
       .addCase(loginUser.rejected, (state, action) => {
@@ -111,6 +119,7 @@ const authSlice = createSlice({
         state.user = action.payload.user;
         state.token = action.payload.token;
         state.isAuthenticated = true;
+        setAccessToken(action.payload.token);
         state.message = action.payload.message;
       })
       .addCase(registerUser.rejected, (state, action) => {

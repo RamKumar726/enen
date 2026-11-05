@@ -1,7 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { cartService } from '../../services/api';
 
-const savedCartItems = JSON.parse(localStorage.getItem('enen_cart_items') || '[]');
+const savedCartItems = (() => {
+  try {
+    const items = JSON.parse(localStorage.getItem('enen_cart_items') || '[]');
+    return Array.isArray(items) ? items : [];
+  } catch (_) { return []; }
+})();
 
 export const syncFetchCart = createAsyncThunk(
   'cart/fetchCart',
@@ -49,7 +54,7 @@ const cartSlice = createSlice({
       state.isOpen = false;
     },
     addToCartLocal: (state, action) => {
-      const { product, size = 'L', color = 'Black', quantity = 1 } = action.payload;
+      const { product, size = product?.sizes?.[0] || 'M', color = product?.colors?.[0]?.name || 'Black', quantity = 1 } = action.payload;
       const existingIndex = state.items.findIndex(
         i => i.product && (i.product._id || i.product.id) === (product._id || product.id) && i.size === size && i.color === color
       );

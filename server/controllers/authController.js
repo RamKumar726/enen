@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+const hashRefreshToken = token => crypto.createHash('sha256').update(token).digest('hex');
 
 // ── Helper: assert required env vars exist ──
 const requireEnv = (key) => {
@@ -30,16 +32,22 @@ const generateRefreshToken = (user) => {
 
 // ── Nodemailer Gmail transporter ──
 const createMailTransporter = () => {
+  const port = Number.parseInt(process.env.EMAIL_PORT || '587', 10);
   return nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.EMAIL_PORT) || 587,
-    secure: false,
+    host: process.env.EMAIL_HOST,
+    port,
+    secure: process.env.EMAIL_SECURE === 'true' || port === 465,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
     }
   });
 };
+
+const setRefreshCookie = (res, token) => res.cookie('enen_refresh', token, {
+  httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  path: '/api/auth', maxAge: 7 * 24 * 60 * 60 * 1000
+});
 
 // ─────────────────────────────────────────
 // POST /api/auth/register
@@ -48,12 +56,20 @@ exports.register = async (req, res) => {
   try {
     const { firstName, lastName, email, password, phone } = req.body;
 
-    if (!firstName || !lastName || !email || !password) {
+    if (typeof firstName !== 'string' || typeof lastName !== 'string' || typeof email !== 'string' || typeof password !== 'string' ||
+        !firstName.trim() || !lastName.trim() || !email.trim() || !password) {
       return res.status(400).json({ success: false, message: 'Please provide all required fields' });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+    if (firstName.trim().length > 80 || lastName.trim().length > 80 || email.length > 254 ||
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) ||
+        (phone !== undefined && (typeof phone !== 'string' || phone.length > 30 || (phone && !/^\+?[\d\s()-]{7,30}$/.test(phone)))) ||
+        Buffer.byteLength(password, 'utf8') > 72) {
+      return res.status(400).json({ success: false, message: 'Provide a valid name, email, phone number, and password' });
+    }
+
+    if (password.length < 12) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 12 characters' });
     }
 
     const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
@@ -73,11 +89,12 @@ exports.register = async (req, res) => {
     const token = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
-    user.refreshToken = refreshToken;
+    user.refreshToken = hashRefreshToken(refreshToken);
     await user.save();
+    setRefreshCookie(res, refreshToken);
 
     // Send welcome email (non-blocking)
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    if (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
       try {
         const transporter = createMailTransporter();
         await transporter.sendMail({
@@ -88,7 +105,7 @@ exports.register = async (req, res) => {
             <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#0F0F12;color:#F5F1EB;padding:40px;border-radius:16px">
               <h1 style="color:#E85D3D;font-size:32px;margin:0">ENEN 🔥</h1>
               <p style="font-size:12px;color:#FF7A00;text-transform:uppercase;letter-spacing:2px">UNLEASH THE BLAZE</p>
-              <h2 style="color:#fff">Hey ${user.firstName}, welcome aboard!</h2>
+              <h2 style="color:#fff">Hey ${escapeHtml(user.firstName)}, welcome aboard!</h2>
               <p style="color:#ccc">Your account has been created successfully. Start exploring our premium anime graphic tees.</p>
               <a href="${process.env.CLIENT_URL || 'http://localhost:3000'}/shop" 
                  style="display:inline-block;background:#E85D3D;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin-top:16px">
@@ -107,7 +124,6 @@ exports.register = async (req, res) => {
       success: true,
       message: 'Registration successful! Welcome to ENEN.',
       token,
-      refreshToken,
       user: {
         id: user._id,
         firstName: user.firstName,
@@ -120,7 +136,8 @@ exports.register = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    if (error.code === 11000) return res.status(409).json({ success: false, message: 'An account with this email already exists' });
+    res.status(500).json({ success: false, message: 'Unable to register account' });
   }
 };
 
@@ -131,7 +148,7 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
+    if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password || Buffer.byteLength(password, 'utf8') > 72) {
       return res.status(400).json({ success: false, message: 'Please enter email and password' });
     }
 
@@ -152,14 +169,14 @@ exports.login = async (req, res) => {
     const token = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
-    user.refreshToken = refreshToken;
+    user.refreshToken = hashRefreshToken(refreshToken);
     await user.save();
+    setRefreshCookie(res, refreshToken);
 
     return res.json({
       success: true,
       message: 'Flame ignited! Welcome back to ENEN.',
       token,
-      refreshToken,
       user: {
         id: user._id,
         firstName: user.firstName,
@@ -172,7 +189,7 @@ exports.login = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Unable to sign in' });
   }
 };
 
@@ -181,11 +198,10 @@ exports.login = async (req, res) => {
 // ─────────────────────────────────────────
 exports.logout = async (req, res) => {
   try {
-    // Clear refresh token in DB if user is authenticated
-    if (req.user?.id) {
-      await User.findByIdAndUpdate(req.user.id, { refreshToken: '' });
-    }
+    const refreshToken = req.cookies?.enen_refresh;
+    if (refreshToken) await User.findOneAndUpdate({ refreshToken: hashRefreshToken(refreshToken) }, { refreshToken: '' });
   } catch (_) {}
+  res.clearCookie('enen_refresh', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', path: '/api/auth' });
   res.json({ success: true, message: 'Logged out successfully' });
 };
 
@@ -193,7 +209,7 @@ exports.logout = async (req, res) => {
 // POST /api/auth/refresh-token
 // ─────────────────────────────────────────
 exports.refreshToken = async (req, res) => {
-  const { refreshToken } = req.body;
+  const { refreshToken } = req.cookies || {};
   if (!refreshToken) {
     return res.status(401).json({ success: false, message: 'Refresh token is required' });
   }
@@ -201,16 +217,18 @@ exports.refreshToken = async (req, res) => {
   try {
     const decoded = jwt.verify(refreshToken, requireEnv('JWT_REFRESH_SECRET'));
     const user = await User.findById(decoded.id);
-    if (!user || user.refreshToken !== refreshToken) {
+    if (!user || user.refreshToken !== hashRefreshToken(refreshToken)) {
       return res.status(401).json({ success: false, message: 'Invalid refresh token' });
     }
 
     const token = generateAccessToken(user);
     const newRefreshToken = generateRefreshToken(user);
-    user.refreshToken = newRefreshToken;
+    user.refreshToken = hashRefreshToken(newRefreshToken);
     await user.save();
+    setRefreshCookie(res, newRefreshToken);
 
-    return res.json({ success: true, token, refreshToken: newRefreshToken });
+    return res.json({ success: true, token, user: { id: user._id, firstName: user.firstName, lastName: user.lastName,
+      email: user.email, phone: user.phone, role: user.role, profileImage: user.profileImage, addresses: user.addresses } });
   } catch (err) {
     return res.status(401).json({ success: false, message: 'Invalid refresh token' });
   }
@@ -222,8 +240,12 @@ exports.refreshToken = async (req, res) => {
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    if (!email) {
+    if (typeof email !== 'string' || !email.trim() || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+
+    if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      return res.status(503).json({ success: false, message: 'Password reset email is not configured. Contact store support.' });
     }
 
     const user = await User.findOne({ email: email.toLowerCase().trim() });
@@ -250,7 +272,7 @@ exports.forgotPassword = async (req, res) => {
     const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
 
     // Send email
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    if (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
       try {
         const transporter = createMailTransporter();
         await transporter.sendMail({
@@ -262,7 +284,7 @@ exports.forgotPassword = async (req, res) => {
               <h1 style="color:#E85D3D;font-size:32px;margin:0">ENEN 🔥</h1>
               <p style="font-size:12px;color:#FF7A00;text-transform:uppercase;letter-spacing:2px">UNLEASH THE BLAZE</p>
               <h2 style="color:#fff">Password Reset</h2>
-              <p style="color:#ccc">Hi ${user.firstName}, you requested a password reset. Click the button below — this link expires in <strong>30 minutes</strong>.</p>
+              <p style="color:#ccc">Hi ${escapeHtml(user.firstName)}, you requested a password reset. Click the button below — this link expires in <strong>30 minutes</strong>.</p>
               <a href="${resetUrl}" 
                  style="display:inline-block;background:#E85D3D;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin-top:16px">
                 Reset Password →
@@ -278,13 +300,13 @@ exports.forgotPassword = async (req, res) => {
         user.resetPasswordToken = undefined;
         user.resetPasswordExpire = undefined;
         await user.save({ validateBeforeSave: false });
-        return res.status(500).json({ success: false, message: 'Email could not be sent. Please try again.' });
+        return res.json(genericResponse);
       }
     }
 
     return res.json(genericResponse);
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Unable to request password reset' });
   }
 };
 
@@ -296,8 +318,9 @@ exports.resetPassword = async (req, res) => {
     const { token } = req.params;
     const { password } = req.body;
 
-    if (!password || password.length < 6) {
-      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+    if (!/^[a-f0-9]{64}$/i.test(token)) return res.status(400).json({ success: false, message: 'Invalid or expired reset token. Please request a new one.' });
+    if (typeof password !== 'string' || password.length < 12 || Buffer.byteLength(password, 'utf8') > 72) {
+      return res.status(400).json({ success: false, message: 'Password must be 12 characters and at most 72 bytes' });
     }
 
     // Hash the incoming token to compare with stored hash
@@ -313,13 +336,14 @@ exports.resetPassword = async (req, res) => {
     }
 
     user.password = password;
+    user.refreshToken = '';
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
-    user.refreshToken = '';
     await user.save();
+    res.clearCookie('enen_refresh', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', path: '/api/auth' });
 
     // Send confirmation email (non-blocking)
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    if (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
       try {
         const transporter = createMailTransporter();
         await transporter.sendMail({
@@ -330,8 +354,8 @@ exports.resetPassword = async (req, res) => {
             <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#0F0F12;color:#F5F1EB;padding:40px;border-radius:16px">
               <h1 style="color:#E85D3D;font-size:32px;margin:0">ENEN 🔥</h1>
               <h2 style="color:#fff">Password Reset Successful</h2>
-              <p style="color:#ccc">Hi ${user.firstName}, your password has been changed successfully. You can now log in with your new password.</p>
-              <p style="color:#888;font-size:12px;margin-top:24px">If you didn't do this, contact us immediately at ${process.env.EMAIL_USER}</p>
+              <p style="color:#ccc">Hi ${escapeHtml(user.firstName)}, your password has been changed successfully. You can now log in with your new password.</p>
+              <p style="color:#888;font-size:12px;margin-top:24px">If you didn't do this, contact us immediately.</p>
             </div>
           `
         });
@@ -340,7 +364,7 @@ exports.resetPassword = async (req, res) => {
 
     return res.json({ success: true, message: 'Password reset successfully! You can now log in.' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Unable to reset password' });
   }
 };
 

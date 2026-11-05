@@ -18,8 +18,8 @@ const ShippingPolicy = () => (
     <div className="bg-[#18181F] border border-[#282834] rounded-3xl p-8 space-y-8">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: "Processing Time", value: "1–2 Business Days" },
-          { label: "Standard Delivery", value: "4–7 Business Days" },
+          { label: "Processing Time", value: "1â€“2 Business Days" },
+          { label: "Standard Delivery", value: "4â€“7 Business Days" },
           { label: "Free Shipping Above", value: "?999" },
         ].map(({ label, value }) => (
           <div key={label} className="bg-[#121218] border border-[#282834] rounded-2xl p-4 text-center">
@@ -31,10 +31,10 @@ const ShippingPolicy = () => (
       <Section title="Shipping Charges">
         <p>Standard shipping: ?99 for orders below ?999</p>
         <p>FREE shipping on all orders above ?999</p>
-        <p>Express shipping (2–3 days): ?199 (select pincodes)</p>
+        <p>Express shipping (2â€“3 days): ?199 (select pincodes)</p>
       </Section>
       <Section title="Delivery Coverage">
-        <p>We ship across India — 27,000+ pincodes via our courier partners (Delhivery, Bluedart, Xpressbees, DTDC). Remote areas may take 1–2 additional days.</p>
+        <p>We ship across India â€” 27,000+ pincodes via our courier partners (Delhivery, Bluedart, Xpressbees, DTDC). Remote areas may take 1â€“2 additional days.</p>
       </Section>
       <Section title="Order Tracking">
         <p>Once your order is shipped, you will receive a tracking number via email. Use this number on our website or the courier partner website to track your package in real time.</p>

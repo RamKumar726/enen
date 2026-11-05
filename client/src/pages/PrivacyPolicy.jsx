@@ -13,7 +13,7 @@ const PrivacyPolicy = () => (
     <div className="text-center space-y-3">
       <div className="w-14 h-14 bg-[#E85D3D]/20 rounded-2xl flex items-center justify-center mx-auto"><Shield className="w-7 h-7 text-[#E85D3D]" /></div>
       <h1 className="text-3xl font-black text-white">Privacy Policy</h1>
-      <p className="text-xs text-gray-500">Last updated: September 2026 · ENEN Apparel Co.</p>
+      <p className="text-xs text-gray-500">Last updated: September 2026 Â· ENEN Apparel Co.</p>
     </div>
     <div className="bg-[#18181F] border border-[#282834] rounded-3xl p-8 space-y-8">
       <Section title="1. Information We Collect">
@@ -39,7 +39,7 @@ const PrivacyPolicy = () => (
         <p>We retain order records for 7 years as required by Indian tax laws. Account data is deleted within 30 days of account deletion request.</p>
       </Section>
       <Section title="8. Contact">
-        <p>For privacy concerns: support@enen.com · ENEN Apparel Co., India</p>
+        <p>For privacy concerns: support@enen.com Â· ENEN Apparel Co., India</p>
       </Section>
     </div>
   </div>

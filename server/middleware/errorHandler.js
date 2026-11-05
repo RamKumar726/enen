@@ -1,8 +1,10 @@
 const errorHandler = (err, req, res, next) => {
   console.error('[ENEN Error]', err.stack || err.message || err);
 
-  let statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-  let message = err.message || 'Internal Server Error';
+  let statusCode = err.statusCode || err.status || (res.statusCode === 200 ? 500 : res.statusCode);
+  let message = statusCode >= 500 && process.env.NODE_ENV === 'production'
+    ? 'Internal server error'
+    : (err.message || 'Internal Server Error');
 
   // Mongoose Bad ObjectId
   if (err.name === 'CastError' && err.kind === 'ObjectId') {
@@ -25,7 +27,8 @@ const errorHandler = (err, req, res, next) => {
   res.status(statusCode).json({
     success: false,
     message,
-    stack: process.env.NODE_ENV === 'production' ? null : err.stack
+    requestId: req.id || undefined,
+    stack: process.env.NODE_ENV === 'production' ? undefined : err.stack
   });
 };
 

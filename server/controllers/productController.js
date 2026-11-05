@@ -1,4 +1,14 @@
 const Product = require('../models/Product');
+const mongoose = require('mongoose');
+
+const validProductOptions = data => {
+  if (data.images !== undefined && (!Array.isArray(data.images) || data.images.length < 1 || data.images.length > 6 ||
+      data.images.some(image => !image || typeof image.url !== 'string' || !/^https:\/\//i.test(image.url) || image.url.length > 2048 || (image.alt !== undefined && String(image.alt).length > 160)))) return false;
+  if (data.colors !== undefined && (!Array.isArray(data.colors) || data.colors.length < 1 || data.colors.length > 20 ||
+      data.colors.some(color => !color || typeof color.name !== 'string' || !color.name.trim() || color.name.length > 40 || !/^#[0-9a-f]{6}$/i.test(color.code || '')))) return false;
+  if (data.sizes !== undefined && (!Array.isArray(data.sizes) || data.sizes.length < 1 || data.sizes.some(size => !['XS', 'S', 'M', 'L', 'XL', 'XXL'].includes(size)))) return false;
+  return true;
+};
 
 const sampleProducts = [
   // ONE PIECE COLLECTION (4 DESIGNS)
@@ -7,8 +17,8 @@ const sampleProducts = [
     name: 'Luffy Gear 5 Sun God Nika Graphic Tee',
     slug: 'luffy-gear-5-sun-god-nika-tee',
     description: 'The Warrior of Liberation! Fiery cloud hair motif in pure white and sun flare yellow on heavyweight drop-shoulder tee.',
-    price: 14.99,
-    originalPrice: 24.99,
+    price: 699,
+    originalPrice: 1399,
     stock: 85,
     images: [
       { url: 'https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?auto=format&fit=crop&w=800&q=80', alt: 'Luffy Gear 5 Front' },
@@ -24,9 +34,9 @@ const sampleProducts = [
     isFeatured: true,
     isBestSeller: true,
     isNewArrival: false,
-    isActive: true,
-    averageRating: 4.9,
-    numReviews: 48,
+    isActive: false,
+    averageRating: 0,
+    numReviews: 0,
     ratings: []
   },
   {
@@ -34,8 +44,8 @@ const sampleProducts = [
     name: 'Roronoa Zoro Three-Sword Style Swordmaster Tee',
     slug: 'roronoa-zoro-swordmaster-tee',
     description: 'King of Hell three-sword green flame aura. High-density screen print with metallic green foil highlights.',
-    price: 14.99,
-    originalPrice: 22.99,
+    price: 699,
+    originalPrice: 1199,
     stock: 60,
     images: [
       { url: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?auto=format&fit=crop&w=800&q=80', alt: 'Zoro Front View' }
@@ -50,9 +60,9 @@ const sampleProducts = [
     isFeatured: true,
     isBestSeller: true,
     isNewArrival: true,
-    isActive: true,
-    averageRating: 4.8,
-    numReviews: 32,
+    isActive: false,
+    averageRating: 0,
+    numReviews: 0,
     ratings: []
   },
   {
@@ -60,8 +70,8 @@ const sampleProducts = [
     name: 'Sanji Diable Jambe Flame Kick Oversized Tee',
     slug: 'sanji-diable-jambe-kick-tee',
     description: 'Ifrit Jambe blue-orange hellfire kick. Drop-shoulder relaxed boxy fit engineered for streetwear enthusiasts.',
-    price: 14.99,
-    originalPrice: 24.99,
+    price: 699,
+    originalPrice: 1399,
     stock: 45,
     images: [
       { url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80', alt: 'Sanji Kick Tee' }
@@ -76,9 +86,9 @@ const sampleProducts = [
     isFeatured: false,
     isBestSeller: false,
     isNewArrival: true,
-    isActive: true,
-    averageRating: 4.7,
-    numReviews: 19,
+    isActive: false,
+    averageRating: 0,
+    numReviews: 0,
     ratings: []
   },
   {
@@ -86,8 +96,8 @@ const sampleProducts = [
     name: 'Chopper Monster Point Heavyweight Sweatshirt',
     slug: 'chopper-monster-point-sweatshirt',
     description: 'Chopper transformed into Monster Point beast. Heavy fleece lined winter sweatshirt with embroidered front badge.',
-    price: 16.99,
-    originalPrice: 28.99,
+    price: 899,
+    originalPrice: 1699,
     stock: 30,
     images: [
       { url: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=800&q=80', alt: 'Chopper Sweatshirt' }
@@ -102,9 +112,9 @@ const sampleProducts = [
     isFeatured: false,
     isBestSeller: true,
     isNewArrival: false,
-    isActive: true,
-    averageRating: 4.9,
-    numReviews: 27,
+    isActive: false,
+    averageRating: 0,
+    numReviews: 0,
     ratings: []
   },
 
@@ -114,8 +124,8 @@ const sampleProducts = [
     name: 'Tanjiro Sun Breathing Hinokami Kagura Tee',
     slug: 'tanjiro-sun-breathing-tee',
     description: 'Set your heart ablaze! Features Tanjiros flame dragon aura and Nichirin blade graphics.',
-    price: 14.99,
-    originalPrice: 24.99,
+    price: 699,
+    originalPrice: 1399,
     stock: 70,
     images: [
       { url: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?auto=format&fit=crop&w=800&q=80', alt: 'Tanjiro Sun Breathing Tee' }
@@ -130,9 +140,9 @@ const sampleProducts = [
     isFeatured: true,
     isBestSeller: true,
     isNewArrival: true,
-    isActive: true,
-    averageRating: 4.9,
-    numReviews: 55,
+    isActive: false,
+    averageRating: 0,
+    numReviews: 0,
     ratings: []
   },
   {
@@ -140,8 +150,8 @@ const sampleProducts = [
     name: 'Nezuko Demon Form Flame Art Sleeveless Tee',
     slug: 'nezuko-demon-form-sleeveless-tee',
     description: 'Blood Demon Art Exploding Flames. Breathable muscle tank cut for gym sessions and summer street style.',
-    price: 14.99,
-    originalPrice: 21.99,
+    price: 699,
+    originalPrice: 1099,
     stock: 50,
     images: [
       { url: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=800&q=80', alt: 'Nezuko Sleeveless Tee' }
@@ -156,9 +166,9 @@ const sampleProducts = [
     isFeatured: false,
     isBestSeller: false,
     isNewArrival: true,
-    isActive: true,
-    averageRating: 4.8,
-    numReviews: 22,
+    isActive: false,
+    averageRating: 0,
+    numReviews: 0,
     ratings: []
   },
   {
@@ -166,8 +176,8 @@ const sampleProducts = [
     name: 'Hashira Squad Nine Pillars Flame Oversized Tee',
     slug: 'hashira-squad-nine-pillars-tee',
     description: 'All 9 Hashira Pillars featured on back panel with Kanji calligraphy across the chest.',
-    price: 16.99,
-    originalPrice: 26.99,
+    price: 899,
+    originalPrice: 1599,
     stock: 90,
     images: [
       { url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80', alt: 'Hashira Squad Tee' }
@@ -182,9 +192,9 @@ const sampleProducts = [
     isFeatured: true,
     isBestSeller: true,
     isNewArrival: false,
-    isActive: true,
-    averageRating: 5.0,
-    numReviews: 61,
+    isActive: false,
+    averageRating: 0,
+    numReviews: 0,
     ratings: []
   },
   {
@@ -192,8 +202,8 @@ const sampleProducts = [
     name: 'Muzan Demon King Infinity Castle Sweatshirt',
     slug: 'muzan-demon-king-sweatshirt',
     description: 'The King of Demons inside the revolving Infinity Castle. Premium brushed fleece lined sweatshirt.',
-    price: 16.99,
-    originalPrice: 29.99,
+    price: 899,
+    originalPrice: 1799,
     stock: 40,
     images: [
       { url: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=800&q=80', alt: 'Muzan Sweatshirt' }
@@ -208,9 +218,9 @@ const sampleProducts = [
     isFeatured: false,
     isBestSeller: false,
     isNewArrival: true,
-    isActive: true,
-    averageRating: 4.8,
-    numReviews: 14,
+    isActive: false,
+    averageRating: 0,
+    numReviews: 0,
     ratings: []
   },
 
@@ -220,8 +230,8 @@ const sampleProducts = [
     name: 'Naruto Sage Mode Nine-Tails Chakra Tee',
     slug: 'naruto-sage-mode-chakra-tee',
     description: 'Golden Kurama chakra seal and Toad Sage eyes. Double-layered graphic print.',
-    price: 14.99,
-    originalPrice: 22.99,
+    price: 699,
+    originalPrice: 1199,
     stock: 75,
     images: [
       { url: 'https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?auto=format&fit=crop&w=800&q=80', alt: 'Naruto Sage Mode Tee' }
@@ -236,9 +246,9 @@ const sampleProducts = [
     isFeatured: true,
     isBestSeller: true,
     isNewArrival: false,
-    isActive: true,
-    averageRating: 4.9,
-    numReviews: 43,
+    isActive: false,
+    averageRating: 0,
+    numReviews: 0,
     ratings: []
   },
   {
@@ -246,8 +256,8 @@ const sampleProducts = [
     name: 'Sasuke Rinnegan Susanoo Armor Tee',
     slug: 'sasuke-rinnegan-susanoo-tee',
     description: 'Purple lightning Indra Susanoo aura with Mangekyou Sharingan eye on front pocket.',
-    price: 14.99,
-    originalPrice: 23.99,
+    price: 699,
+    originalPrice: 1299,
     stock: 65,
     images: [
       { url: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=800&q=80', alt: 'Sasuke Susanoo Tee' }
@@ -262,9 +272,9 @@ const sampleProducts = [
     isFeatured: false,
     isBestSeller: true,
     isNewArrival: true,
-    isActive: true,
-    averageRating: 4.8,
-    numReviews: 36,
+    isActive: false,
+    averageRating: 0,
+    numReviews: 0,
     ratings: []
   },
   {
@@ -272,8 +282,8 @@ const sampleProducts = [
     name: 'Kakashi Sharingan Lightning Blade Sleeveless Tee',
     slug: 'kakashi-lightning-blade-sleeveless-tee',
     description: 'The Copy Ninja Kakashi wielding Raikiri Lightning Blade. Cut-off athletic sleeveless tank.',
-    price: 16.99,
-    originalPrice: 24.99,
+    price: 899,
+    originalPrice: 1399,
     stock: 45,
     images: [
       { url: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=800&q=80', alt: 'Kakashi Sleeveless Tee' }
@@ -288,9 +298,9 @@ const sampleProducts = [
     isFeatured: false,
     isBestSeller: false,
     isNewArrival: true,
-    isActive: true,
-    averageRating: 4.7,
-    numReviews: 18,
+    isActive: false,
+    averageRating: 0,
+    numReviews: 0,
     ratings: []
   },
 
@@ -300,8 +310,8 @@ const sampleProducts = [
     name: 'Eren Attack Titan Founder Flame Tee',
     slug: 'eren-attack-titan-founder-tee',
     description: 'Rumbling activation! Eren in Attack Titan form roaring under blood red lightning.',
-    price: 16.99,
-    originalPrice: 25.99,
+    price: 899,
+    originalPrice: 1499,
     stock: 80,
     images: [
       { url: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?auto=format&fit=crop&w=800&q=80', alt: 'Eren Titan Tee' }
@@ -316,9 +326,9 @@ const sampleProducts = [
     isFeatured: true,
     isBestSeller: true,
     isNewArrival: false,
-    isActive: true,
-    averageRating: 4.9,
-    numReviews: 50,
+    isActive: false,
+    averageRating: 0,
+    numReviews: 0,
     ratings: []
   },
   {
@@ -326,8 +336,8 @@ const sampleProducts = [
     name: 'Levi Ackerman Captain Blades Graphic Tee',
     slug: 'levi-ackerman-blades-tee',
     description: 'Humanitys Strongest Soldier! Levi in mid-air ODM gear spin attack.',
-    price: 14.99,
-    originalPrice: 22.99,
+    price: 699,
+    originalPrice: 1199,
     stock: 95,
     images: [
       { url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80', alt: 'Levi Ackerman Tee' }
@@ -342,9 +352,9 @@ const sampleProducts = [
     isFeatured: true,
     isBestSeller: true,
     isNewArrival: true,
-    isActive: true,
-    averageRating: 5.0,
-    numReviews: 68,
+    isActive: false,
+    averageRating: 0,
+    numReviews: 0,
     ratings: []
   },
   {
@@ -352,8 +362,8 @@ const sampleProducts = [
     name: 'Mikasa Red Scarf Wings of Freedom Oversized Tee',
     slug: 'mikasa-scraf-wings-tee',
     description: 'If I dont win, I die. If I win, I live. Mikasas iconic red scarf with Wings of Freedom back emblem.',
-    price: 14.99,
-    originalPrice: 24.99,
+    price: 699,
+    originalPrice: 1399,
     stock: 55,
     images: [
       { url: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=800&q=80', alt: 'Mikasa Scarf Tee' }
@@ -368,9 +378,9 @@ const sampleProducts = [
     isFeatured: false,
     isBestSeller: false,
     isNewArrival: true,
-    isActive: true,
-    averageRating: 4.8,
-    numReviews: 29,
+    isActive: false,
+    averageRating: 0,
+    numReviews: 0,
     ratings: []
   },
   {
@@ -378,8 +388,8 @@ const sampleProducts = [
     name: 'Colossal Titan Wall Maria Steam Heavyweight Sweatshirt',
     slug: 'colossal-titan-steam-sweatshirt',
     description: 'On that day, humanity received a grim reminder. Steam heat print wrapping around chest and sleeves.',
-    price: 18.99,
-    originalPrice: 32.99,
+    price: 1499,
+    originalPrice: 1999,
     stock: 35,
     images: [
       { url: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=800&q=80', alt: 'Colossal Titan Sweatshirt' }
@@ -394,9 +404,9 @@ const sampleProducts = [
     isFeatured: false,
     isBestSeller: true,
     isNewArrival: false,
-    isActive: true,
-    averageRating: 4.9,
-    numReviews: 33,
+    isActive: false,
+    averageRating: 0,
+    numReviews: 0,
     ratings: []
   },
 
@@ -406,8 +416,8 @@ const sampleProducts = [
     name: 'Deku One For All Full Cowl Plus Ultra Tee',
     slug: 'deku-one-for-all-full-cowl-tee',
     description: '100% One For All green lightning glow. UV reactive print that shines under night city lights.',
-    price: 14.99,
-    originalPrice: 23.99,
+    price: 699,
+    originalPrice: 1299,
     stock: 75,
     images: [
       { url: 'https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?auto=format&fit=crop&w=800&q=80', alt: 'Deku Plus Ultra Tee' }
@@ -422,9 +432,9 @@ const sampleProducts = [
     isFeatured: true,
     isBestSeller: true,
     isNewArrival: true,
-    isActive: true,
-    averageRating: 4.8,
-    numReviews: 41,
+    isActive: false,
+    averageRating: 0,
+    numReviews: 0,
     ratings: []
   },
   {
@@ -432,8 +442,8 @@ const sampleProducts = [
     name: 'Bakugo Howitzer Impact Explosion Tee',
     slug: 'bakugo-howitzer-impact-explosion-tee',
     description: 'SHINEEE! Orange explosion sparks and gauntlet grenades across the back panel.',
-    price: 14.99,
-    originalPrice: 22.99,
+    price: 699,
+    originalPrice: 1199,
     stock: 60,
     images: [
       { url: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?auto=format&fit=crop&w=800&q=80', alt: 'Bakugo Explosion Tee' }
@@ -448,9 +458,9 @@ const sampleProducts = [
     isFeatured: false,
     isBestSeller: false,
     isNewArrival: true,
-    isActive: true,
-    averageRating: 4.7,
-    numReviews: 25,
+    isActive: false,
+    averageRating: 0,
+    numReviews: 0,
     ratings: []
   },
   {
@@ -458,8 +468,8 @@ const sampleProducts = [
     name: 'All Might Symbol of Peace Flame Oversized Tee',
     slug: 'all-might-symbol-of-peace-tee',
     description: 'I am here! All Might in classic silver-age comic book art style on drop-shoulder boxy tee.',
-    price: 16.99,
-    originalPrice: 26.99,
+    price: 899,
+    originalPrice: 1599,
     stock: 45,
     images: [
       { url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80', alt: 'All Might Oversized Tee' }
@@ -474,9 +484,9 @@ const sampleProducts = [
     isFeatured: true,
     isBestSeller: true,
     isNewArrival: false,
-    isActive: true,
-    averageRating: 5.0,
-    numReviews: 53,
+    isActive: false,
+    averageRating: 0,
+    numReviews: 0,
     ratings: []
   }
 ];
@@ -485,7 +495,7 @@ exports.getProducts = async (req, res) => {
   try {
     const { category, collection, featured, bestseller, search, sort, minPrice, maxPrice, size, color, page = 1, limit = 12 } = req.query;
 
-    let query = {};
+    let query = { isActive: false };
 
     if (category && category !== 'All') {
       query.category = category;
@@ -501,18 +511,27 @@ exports.getProducts = async (req, res) => {
     if (size) query.sizes = size;
     if (color) query['colors.name'] = new RegExp(color, 'i');
 
-    if (minPrice || maxPrice) {
+    if ((minPrice !== undefined && (!Number.isFinite(Number(minPrice)) || Number(minPrice) < 0)) ||
+        (maxPrice !== undefined && (!Number.isFinite(Number(maxPrice)) || Number(maxPrice) < 0))) {
+      return res.status(400).json({ success: false, message: 'Price filters must be non-negative numbers' });
+    }
+    if (minPrice !== undefined || maxPrice !== undefined) {
       query.price = {};
-      if (minPrice) query.price.$gte = Number(minPrice);
-      if (maxPrice) query.price.$lte = Number(maxPrice);
+      if (minPrice !== undefined) query.price.$gte = Number(minPrice);
+      if (maxPrice !== undefined) query.price.$lte = Number(maxPrice);
+      if (query.price.$gte !== undefined && query.price.$lte !== undefined && query.price.$gte > query.price.$lte) {
+        return res.status(400).json({ success: false, message: 'Minimum price cannot exceed maximum price' });
+      }
     }
 
     if (search) {
+      if (String(search).length > 100) return res.status(400).json({ success: false, message: 'Search query is too long' });
+      const safeSearch = String(search).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { animeSeries: { $regex: search, $options: 'i' } },
-        { collectionName: { $regex: search, $options: 'i' } }
+        { name: { $regex: safeSearch, $options: 'i' } },
+        { description: { $regex: safeSearch, $options: 'i' } },
+        { animeSeries: { $regex: safeSearch, $options: 'i' } },
+        { collectionName: { $regex: safeSearch, $options: 'i' } }
       ];
     }
 
@@ -522,28 +541,31 @@ exports.getProducts = async (req, res) => {
     else if (sort === 'rating') sortOptions.averageRating = -1;
     else sortOptions.createdAt = -1;
 
+    const pageNumber = Math.min(10000, Math.max(1, Number.parseInt(page, 10) || 1));
+    const pageLimit = Math.min(100, Math.max(1, Number.parseInt(limit, 10) || 12));
     const count = await Product.countDocuments(query);
     const dbProducts = await Product.find(query)
       .sort(sortOptions)
-      .skip((Number(page) - 1) * Number(limit))
-      .limit(Number(limit));
+      .skip((pageNumber - 1) * pageLimit)
+      .limit(pageLimit);
 
     return res.json({
       success: true,
       products: dbProducts,
-      page: Number(page),
-      pages: Math.ceil(count / Number(limit)) || 1,
+      page: pageNumber,
+      pages: Math.ceil(count / pageLimit) || 1,
       totalProducts: count
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Request could not be completed' });
   }
 };
 
 exports.getProductById = async (req, res) => {
   try {
     const { id } = req.params;
-    const product = await Product.findById(id);
+    if (!mongoose.isValidObjectId(id)) return res.status(404).json({ success: false, message: 'Product not found' });
+    const product = await Product.findOne({ _id: id, isActive: false });
 
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
@@ -551,23 +573,65 @@ exports.getProductById = async (req, res) => {
 
     res.json({ success: true, product });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Request could not be completed' });
+  }
+};
+
+exports.getAdminProductById = async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ success: false, message: 'Product not found' });
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+    return res.json({ success: true, product });
+  } catch (error) {
+    return res.status(error.name === 'CastError' ? 404 : 500).json({ success: false, message: 'Unable to load product' });
+  }
+};
+
+exports.getAdminProducts = async (req, res) => {
+  try {
+    const page = Math.min(10000, Math.max(1, Number.parseInt(req.query.page, 10) || 1));
+    const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit, 10) || 50));
+    const search = String(req.query.search || '').trim();
+    if (search.length > 100) return res.status(400).json({ success: false, message: 'Search query is too long' });
+    const safeSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const query = {};
+    if (search) query.$or = ['name', 'animeSeries', 'collectionName'].map(field => ({ [field]: { $regex: safeSearch, $options: 'i' } }));
+    if (req.query.category && req.query.category !== 'All') query.category = req.query.category;
+    if (req.query.collection && req.query.collection !== 'All') query.collectionName = req.query.collection;
+    if (req.query.active === 'true') query.isActive = true;
+    if (req.query.active === 'false') query.isActive = false;
+    const [products, totalProducts] = await Promise.all([
+      Product.find(query).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit),
+      Product.countDocuments(query)
+    ]);
+    return res.json({ success: true, products, page, pages: Math.ceil(totalProducts / limit) || 1, totalProducts });
+  } catch (_) {
+    return res.status(500).json({ success: false, message: 'Unable to load catalog' });
   }
 };
 
 exports.createProduct = async (req, res) => {
   try {
-    const product = await Product.create(req.body);
+    const allowedFields = ['name', 'slug', 'description', 'price', 'originalPrice', 'stock', 'images', 'sizes', 'colors', 'category', 'collectionName', 'animeSeries', 'fabric', 'printType', 'hsnCode', 'weightKg', 'isFeatured', 'isBestSeller', 'isNewArrival', 'isActive'];
+    const input = Object.fromEntries(Object.entries(req.body).filter(([key]) => allowedFields.includes(key)));
+    if (!validProductOptions(input)) return res.status(400).json({ success: false, message: 'Images, sizes, or color options are invalid' });
+    const product = await Product.create(input);
     res.status(201).json({ success: true, message: 'Product created successfully', product });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.name === 'ValidationError' || error.code === 11000 ? 400 : 500)
+      .json({ success: false, message: error.name === 'ValidationError' ? Object.values(error.errors).map(e => e.message).join(', ') : 'Unable to create product' });
   }
 };
 
 exports.updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const product = await Product.findByIdAndUpdate(id, req.body, { new: true });
+    if (!mongoose.isValidObjectId(id)) return res.status(404).json({ success: false, message: 'Product not found' });
+    const allowedFields = ['name', 'slug', 'description', 'price', 'originalPrice', 'stock', 'images', 'sizes', 'colors', 'category', 'collectionName', 'animeSeries', 'fabric', 'printType', 'hsnCode', 'weightKg', 'isFeatured', 'isBestSeller', 'isNewArrival', 'isActive'];
+    const updates = Object.fromEntries(Object.entries(req.body).filter(([key]) => allowedFields.includes(key)));
+    if (!validProductOptions(updates)) return res.status(400).json({ success: false, message: 'Images, sizes, or color options are invalid' });
+    const product = await Product.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
 
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
@@ -575,31 +639,42 @@ exports.updateProduct = async (req, res) => {
 
     res.json({ success: true, message: 'Product updated successfully', product });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.code === 11000 ? 409 : error.name === 'ValidationError' ? 400 : error.name === 'CastError' ? 404 : 500)
+      .json({ success: false, message: error.name === 'ValidationError' ? Object.values(error.errors).map(e => e.message).join(', ') : 'Unable to update product' });
   }
 };
 
 exports.deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const product = await Product.findByIdAndDelete(id);
+    if (!mongoose.isValidObjectId(id)) return res.status(404).json({ success: false, message: 'Product not found' });
+    const product = await Product.findByIdAndUpdate(id, { $set: { isActive: false } }, { new: true });
 
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    res.json({ success: true, message: 'Product deleted successfully' });
+    res.json({ success: true, message: 'Product archived successfully', product });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Request could not be completed' });
   }
 };
 
 exports.addProductReview = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) return res.status(404).json({ success: false, message: 'Product not found' });
     const { rating, comment } = req.body;
 
-    const product = await Product.findById(id);
+    const numericRating = Number(rating);
+    if (!Number.isInteger(numericRating) || numericRating < 1 || numericRating > 5 || typeof comment !== 'string' || !comment.trim() || comment.length > 2000) {
+      return res.status(400).json({ success: false, message: 'Provide a rating from 1 to 5 and a comment under 2,000 characters' });
+    }
+
+    const verifiedPurchase = await require('../models/Order').exists({ userId: req.user.id, orderStatus: 'Delivered', 'products.productId': id });
+    if (!verifiedPurchase) return res.status(403).json({ success: false, message: 'A delivered purchase is required to review this product' });
+
+    const product = await Product.findOne({ _id: id, isActive: false });
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
@@ -615,8 +690,8 @@ exports.addProductReview = async (req, res) => {
     const newReview = {
       userId: req.user.id,
       userName: `${req.user.firstName || 'Anime'} ${req.user.lastName || 'Fan'}`,
-      rating: Number(rating),
-      comment,
+      rating: numericRating,
+      comment: comment.trim(),
       createdAt: new Date()
     };
 
@@ -629,7 +704,7 @@ exports.addProductReview = async (req, res) => {
 
     res.status(201).json({ success: true, message: 'Review added successfully!', product });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Request could not be completed' });
   }
 };
 

@@ -13,7 +13,7 @@ const Footer = () => {
 
   const handleSubscribe = (e) => {
     e.preventDefault();
-    if (email) { setSubscribed(true); setEmail(''); setTimeout(() => setSubscribed(false), 4000); }
+    if (email) { setSubscribed(true); setEmail(''); setTimeout(() => setSubscribed(false), 5000); }
   };
 
   const navLinks = [
@@ -36,9 +36,9 @@ const Footer = () => {
     { to: '/shipping-policy', label: 'Shipping Policy' },
   ];
   const socials = [
-    { icon: Instagram, label: 'Instagram', color: '#E1306C' },
-    { icon: Twitter, label: 'Twitter', color: '#1DA1F2' },
-    { icon: Youtube, label: 'YouTube', color: '#FF0000' },
+    { icon: Instagram, label: 'Instagram', color: '#E1306C', url: import.meta.env.VITE_INSTAGRAM_URL },
+    { icon: Twitter, label: 'Twitter', color: '#1DA1F2', url: import.meta.env.VITE_TWITTER_URL },
+    { icon: Youtube, label: 'YouTube', color: '#FF0000', url: import.meta.env.VITE_YOUTUBE_URL },
   ];
 
   const linkCls = 'text-xs text-[#7A7A7A] dark:text-gray-500 hover:text-[#E85D3D] dark:hover:text-[#E85D3D] transition-colors duration-200 font-medium flex items-center gap-1.5 group';
@@ -63,8 +63,8 @@ const Footer = () => {
           </p>
 
           <div className="flex items-center gap-2.5">
-            {socials.map(({ icon: Icon, label, color }) => (
-              <motion.a key={label} href="#" whileHover={{ y: -3, scale: 1.1 }} whileTap={{ scale: 0.95 }} title={label}
+            {socials.filter(({ url }) => typeof url === 'string' && url.startsWith('https://')).map(({ icon: Icon, label, color, url }) => (
+              <motion.a key={label} href={url} target="_blank" rel="noopener noreferrer" whileHover={{ y: -3, scale: 1.1 }} whileTap={{ scale: 0.95 }} title={label}
                 className="p-2.5 bg-white dark:bg-[#111116] border border-[#EAE6DD] dark:border-[#1E1E28] text-[#7A7A7A] dark:text-gray-400 rounded-xl transition-all duration-200"
                 onMouseEnter={(e) => { e.currentTarget.style.borderColor = color + '60'; e.currentTarget.style.color = color; e.currentTarget.style.boxShadow = `0 0 12px ${color}30`; }}
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.color = ''; e.currentTarget.style.boxShadow = ''; }}>
@@ -75,7 +75,7 @@ const Footer = () => {
 
           <div className="inline-flex items-center gap-2 text-[10px] text-[#A8A8A8] dark:text-gray-600 font-semibold border border-[#EAE6DD] dark:border-[#1E1E28] px-3 py-2 rounded-xl bg-white/60 dark:bg-transparent">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-            <span>256-Bit Encrypted & Razorpay Verified</span>
+            <span>Secure payment processing</span>
           </div>
         </div>
 
@@ -123,7 +123,7 @@ const Footer = () => {
             <h4 className="text-xs font-extrabold text-[#1C1C1C] dark:text-white uppercase tracking-[0.12em]">Join The Flame Order</h4>
           </div>
           <p className="text-xs text-[#7A7A7A] dark:text-gray-500 leading-relaxed">
-            Get 10% off your first drop with promo code <strong className="text-[#FF7A00] font-extrabold">BLAZE10</strong>.
+            Get updates on new products and offers. Email sign-up is not enabled yet; your address will not be saved.
           </p>
           <form onSubmit={handleSubscribe} className="space-y-2">
             <div className={`relative rounded-xl border transition-all duration-300 ${emailFocused ? 'border-[#E85D3D]/60 shadow-[0_0_12px_rgba(232,93,61,0.15)]' : 'border-[#EAE6DD] dark:border-[#1E1E28]'}`}>
@@ -140,7 +140,7 @@ const Footer = () => {
               {subscribed && (
                 <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
                   className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5">
-                  <Heart className="w-3 h-3 fill-current" /> Welcome to the Flame Order!
+                  <Heart className="w-3 h-3 fill-current" /> Newsletter sign-up is not enabled yet. Your address was not saved.
                 </motion.p>
               )}
             </AnimatePresence>
@@ -160,11 +160,11 @@ const Footer = () => {
         <div className="flex flex-col sm:flex-row items-center justify-between text-[11px] text-[#A8A8A8] dark:text-gray-600 gap-3">
           <p>© {new Date().getFullYear()} ENEN Apparel Co. All rights reserved.</p>
           <div className="flex items-center gap-4">
-            <span>Razorpay Verified</span>
+            <span>Payment options shown at checkout</span>
             <span className="text-[#E85D3D]/40">•</span>
-            <span>100% Secure Checkout</span>
+            <span>Secure checkout</span>
             <span className="text-[#E85D3D]/40">•</span>
-            <span>Express Delivery</span>
+            <span>Delivery details at checkout</span>
           </div>
         </div>
       </div>

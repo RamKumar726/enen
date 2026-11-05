@@ -15,10 +15,9 @@ export const createNewOrder = createAsyncThunk(
 
 export const fetchUserOrders = createAsyncThunk(
   'orders/fetchUserOrders',
-  async (_, { rejectWithValue }) => {
+  async (page = 1, { rejectWithValue }) => {
     try {
-      const response = await orderService.getUserOrders();
-      return response.orders;
+      return await orderService.getUserOrders({ page, limit: 20 });
     } catch (err) {
       return rejectWithValue(err.message || 'Failed to load order history');
     }
@@ -44,14 +43,18 @@ const orderSlice = createSlice({
     currentOrder: null,
     loading: false,
     error: null,
-    successMessage: null
+    successMessage: null,
+    page: 1,
+    pages: 1,
+    totalOrders: 0
   },
   reducers: {
     clearOrderState: (state) => {
       state.currentOrder = null;
       state.error = null;
       state.successMessage = null;
-    }
+    },
+    setOrdersPage: (state, action) => { state.page = action.payload; }
   },
   extraReducers: (builder) => {
     builder
@@ -74,7 +77,10 @@ const orderSlice = createSlice({
       })
       .addCase(fetchUserOrders.fulfilled, (state, action) => {
         state.loading = false;
-        state.orders = action.payload || [];
+        state.orders = action.payload.orders || [];
+        state.page = action.payload.page || 1;
+        state.pages = action.payload.pages || 1;
+        state.totalOrders = action.payload.totalOrders || 0;
       })
       .addCase(fetchUserOrders.rejected, (state, action) => {
         state.loading = false;
@@ -86,5 +92,5 @@ const orderSlice = createSlice({
   }
 });
 
-export const { clearOrderState } = orderSlice.actions;
+export const { clearOrderState, setOrdersPage } = orderSlice.actions;
 export default orderSlice.reducer;

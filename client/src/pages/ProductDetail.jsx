@@ -349,8 +349,8 @@ const ProductDetail = () => {
               <div className="flex items-center gap-1.5">
                 <div className="flex items-center gap-1 text-amber-400 bg-[#18181F] border border-[#282834] px-3 py-1 rounded-xl text-xs font-bold">
                   <Star className="w-3.5 h-3.5 fill-current" />
-                  <span className="text-white">{currentProduct.averageRating || 4.9}</span>
-                  <span className="text-gray-400 text-[11px]">({currentProduct.numReviews || 12} Reviews)</span>
+                  <span className="text-white">{currentProduct.numReviews > 0 ? currentProduct.averageRating.toFixed(1) : 'New'}</span>
+                  <span className="text-gray-400 text-[11px]">({currentProduct.numReviews || 0} Reviews)</span>
                 </div>
                 {/* Wishlist toggle */}
                 <motion.button

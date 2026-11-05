@@ -140,9 +140,9 @@ const WishlistPage = () => {
 
                   {/* Rating */}
                   <div className="flex items-center gap-1">
-                    <Star className="w-3 h-3 text-amber-400 fill-current" />
+                    {product.numReviews > 0 && <Star className="w-3 h-3 text-amber-400 fill-current" />}
                     <span className="text-[10px] font-black text-[#1C1C1C] dark:text-white">
-                      {product.averageRating?.toFixed(1) || '4.8'}
+                      {product.numReviews > 0 ? product.averageRating?.toFixed(1) : 'New'}
                     </span>
                   </div>
 

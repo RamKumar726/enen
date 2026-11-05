@@ -2,6 +2,7 @@ const Order = require('../models/Order');
 const Product = require('../models/Product');
 const User = require('../models/User');
 const Carousel = require('../models/Carousel');
+const mongoose = require('mongoose');
 
 // GET /api/admin/dashboard — KPI stats + recent orders
 exports.getDashboardStats = async (req, res) => {
@@ -16,7 +17,7 @@ exports.getDashboardStats = async (req, res) => {
 
     // Calculate total revenue using aggregation
     const revenueAgg = await Order.aggregate([
-      { $match: { paymentStatus: { $in: ['Paid', 'Pending'] }, orderStatus: { $ne: 'Cancelled' } } },
+      { $match: { paymentStatus: 'Paid', orderStatus: { $nin: ['Cancelled', 'Returned'] } } },
       { $group: { _id: null, total: { $sum: '$totalAmount' } } }
     ]);
     const totalRevenue = revenueAgg.length > 0 ? revenueAgg[0].total : 0;
@@ -31,7 +32,7 @@ exports.getDashboardStats = async (req, res) => {
     monthStart.setDate(1);
     monthStart.setHours(0, 0, 0, 0);
     const monthRevenueAgg = await Order.aggregate([
-      { $match: { createdAt: { $gte: monthStart }, orderStatus: { $ne: 'Cancelled' } } },
+      { $match: { createdAt: { $gte: monthStart }, paymentStatus: 'Paid', orderStatus: { $nin: ['Cancelled', 'Returned'] } } },
       { $group: { _id: null, total: { $sum: '$totalAmount' } } }
     ]);
     const monthRevenue = monthRevenueAgg.length > 0 ? monthRevenueAgg[0].total : 0;
@@ -50,7 +51,7 @@ exports.getDashboardStats = async (req, res) => {
       recentOrders
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Request could not be completed' });
   }
 };
 
@@ -58,7 +59,7 @@ exports.getDashboardStats = async (req, res) => {
 exports.getAnalyticsData = async (req, res) => {
   try {
     // Aggregate revenue by collection from actual orders
-    const orders = await Order.find({ orderStatus: { $ne: 'Cancelled' } });
+    const orders = await Order.find({ paymentStatus: 'Paid', orderStatus: { $nin: ['Cancelled', 'Returned'] } });
 
     const collectionRevenueMap = {};
     const collectionOrdersMap = {};
@@ -158,24 +159,44 @@ exports.getAnalyticsData = async (req, res) => {
       categorySales
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Request could not be completed' });
   }
 };
 
 // GET /api/admin/orders — all orders for admin management
 exports.getAllOrders = async (req, res) => {
   try {
-    const { status, search, page = 1, limit = 50 } = req.query;
+    const { status, page = 1, limit = 50 } = req.query;
+    const search = String(req.query.search || '').trim();
+    if (search.length > 100) return res.status(400).json({ success: false, message: 'Search query is too long' });
 
     let query = {};
     if (status && status !== 'All') {
+      if (!['Processing', 'Shipped', 'Delivered', 'Cancelled', 'Return Requested', 'Returned'].includes(status)) {
+        return res.status(400).json({ success: false, message: 'Invalid order status filter' });
+      }
       query.orderStatus = status;
     }
 
+    if (search) {
+      const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const matchingUsers = await User.find({ $or: [
+        { email: { $regex: escaped, $options: 'i' } },
+        { firstName: { $regex: escaped, $options: 'i' } },
+        { lastName: { $regex: escaped, $options: 'i' } }
+      ] }).select('_id').limit(500);
+      const searchOptions = [ { trackingNumber: { $regex: escaped, $options: 'i' } } ];
+      if (/^[a-f0-9]{24}$/i.test(search)) searchOptions.push({ _id: new mongoose.Types.ObjectId(search) });
+      if (matchingUsers.length) searchOptions.push({ userId: { $in: matchingUsers.map(user => user._id) } });
+      query.$or = searchOptions;
+    }
+
+    const pageNumber = Math.min(10000, Math.max(1, Number.parseInt(page, 10) || 1));
+    const pageLimit = Math.min(100, Math.max(1, Number.parseInt(limit, 10) || 50));
     const orders = await Order.find(query)
       .sort({ createdAt: -1 })
-      .skip((Number(page) - 1) * Number(limit))
-      .limit(Number(limit))
+      .skip((pageNumber - 1) * pageLimit)
+      .limit(pageLimit)
       .populate('userId', 'firstName lastName email phone');
 
     const totalOrders = await Order.countDocuments(query);
@@ -183,28 +204,38 @@ exports.getAllOrders = async (req, res) => {
     res.json({
       success: true,
       orders,
-      page: Number(page),
-      pages: Math.ceil(totalOrders / Number(limit)) || 1,
+      page: pageNumber,
+      pages: Math.ceil(totalOrders / pageLimit) || 1,
       totalOrders
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Request could not be completed' });
   }
 };
 
 // GET /api/admin/users — all registered users
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find()
+    const pageNumber = Math.min(10000, Math.max(1, Number.parseInt(req.query.page, 10) || 1));
+    const pageLimit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit, 10) || 50));
+    const search = String(req.query.search || '').trim();
+    if (search.length > 100) return res.status(400).json({ success: false, message: 'Search query is too long' });
+    const query = search ? { $or: ['firstName', 'lastName', 'email'].map(field => ({ [field]: { $regex: search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } })) } : {};
+    const [users, totalUsers, admins, members] = await Promise.all([User.find(query)
       .select('-password -refreshToken')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 }).skip((pageNumber - 1) * pageLimit).limit(pageLimit),
+      User.countDocuments(query), User.countDocuments({ role: 'admin' }), User.countDocuments({ role: 'user' })]);
 
     res.json({
       success: true,
-      users
+      users,
+      page: pageNumber,
+      pages: Math.ceil(totalUsers / pageLimit) || 1,
+      totalUsers,
+      stats: { admins, members }
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Request could not be completed' });
   }
 };
 
@@ -213,6 +244,8 @@ exports.updateUserRole = async (req, res) => {
   try {
     const { id } = req.params;
     const { role } = req.body;
+
+    if (!mongoose.isValidObjectId(id)) return res.status(404).json({ success: false, message: 'User not found' });
 
     if (!['user', 'admin'].includes(role)) {
       return res.status(400).json({ success: false, message: 'Role must be "user" or "admin"' });
@@ -229,6 +262,7 @@ exports.updateUserRole = async (req, res) => {
     }
 
     user.role = role;
+    user.refreshToken = '';
     await user.save();
 
     res.json({
@@ -243,6 +277,6 @@ exports.updateUserRole = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Request could not be completed' });
   }
 };

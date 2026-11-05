@@ -1,182 +1,94 @@
+const mongoose = require('mongoose');
 const User = require('../models/User');
+
+const validAddress = (address) => {
+  const fields = ['name', 'phone', 'street', 'city', 'state', 'pincode'];
+  return address && fields.every(key => typeof address[key] === 'string' && address[key].trim().length > 0 && address[key].length <= 200)
+    && /^\d{6}$/.test(address.pincode) && /^\+?[\d\s()-]+$/.test(address.phone) && (() => { const digits = address.phone.replace(/\D/g, ''); return digits.length === 10 || (digits.length === 12 && digits.startsWith('91')) || (digits.length === 11 && digits.startsWith('0')); })();
+};
 
 exports.getUserProfile = async (req, res) => {
   try {
-    const userId = req.user.id;
-
-    try {
-      const user = await User.findById(userId).select('-password');
-      if (user) {
-        return res.json({ success: true, user });
-      }
-    } catch (dbErr) {}
-
-    // Fallback response using decoded JWT user info
-    res.json({
-      success: true,
-      user: {
-        id: userId,
-        firstName: req.user.firstName || 'Anime',
-        lastName: req.user.lastName || 'Fan',
-        email: req.user.email || 'fan@enen.com',
-        phone: req.user.phone || '+91 9876543210',
-        role: req.user.role || 'user',
-        profileImage: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
-        addresses: [
-          {
-            _id: 'addr_1',
-            name: (req.user.firstName || 'Anime') + ' ' + (req.user.lastName || 'Fan'),
-            phone: '+91 9876543210',
-            street: '77 Anime Boulevard, Flame District',
-            city: 'Tokyo',
-            state: 'Kanto',
-            pincode: '400001',
-            country: 'India',
-            isDefault: true
-          }
-        ]
-      }
-    });
+    const user = await User.findById(req.user.id).select('-password -refreshToken -resetPasswordToken -resetPasswordExpire');
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    return res.json({ success: true, user });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: 'Unable to load profile' });
   }
 };
 
 exports.updateUserProfile = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const { firstName, lastName, phone, profileImage } = req.body;
-
-    try {
-      const user = await User.findById(userId);
-      if (user) {
-        if (firstName) user.firstName = firstName;
-        if (lastName) user.lastName = lastName;
-        if (phone) user.phone = phone;
-        if (profileImage) user.profileImage = profileImage;
-        await user.save();
-        return res.json({
-          success: true,
-          message: 'Profile updated successfully!',
-          user: {
-            id: user._id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email,
-            phone: user.phone,
-            role: user.role,
-            profileImage: user.profileImage,
-            addresses: user.addresses
-          }
-        });
+    const updates = {};
+    for (const field of ['firstName', 'lastName', 'phone']) {
+      if (req.body[field] !== undefined) {
+        if (typeof req.body[field] !== 'string' || !req.body[field].trim() || req.body[field].length > 100) {
+          return res.status(400).json({ success: false, message: `Invalid ${field}` });
+        }
+        updates[field] = req.body[field].trim();
       }
-    } catch (dbErr) {}
-
-    res.json({
-      success: true,
-      message: 'Profile updated successfully!',
-      user: {
-        id: userId,
-        firstName: firstName || req.user.firstName,
-        lastName: lastName || req.user.lastName,
-        email: req.user.email,
-        phone: phone || req.user.phone,
-        role: req.user.role,
-        profileImage: profileImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
-        addresses: []
-      }
-    });
+    }
+    if (updates.phone && (!/^\+?[\d\s()-]+$/.test(updates.phone) || updates.phone.replace(/\D/g, '').length < 10 || updates.phone.replace(/\D/g, '').length > 15)) {
+      return res.status(400).json({ success: false, message: 'Provide a valid phone number' });
+    }
+    if (req.body.profileImage !== undefined) {
+      try {
+        const imageUrl = new URL(req.body.profileImage);
+        if (imageUrl.protocol !== 'https:') throw new Error('invalid protocol');
+        updates.profileImage = imageUrl.toString();
+      } catch (_) { return res.status(400).json({ success: false, message: 'Profile image must be an HTTPS URL' }); }
+    }
+    const user = await User.findByIdAndUpdate(req.user.id, { $set: updates }, { new: true, runValidators: true })
+      .select('-password -refreshToken -resetPasswordToken -resetPasswordExpire');
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    return res.json({ success: true, message: 'Profile updated successfully', user });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: 'Unable to update profile' });
   }
 };
 
 exports.getAddresses = async (req, res) => {
   try {
-    const userId = req.user.id;
-    try {
-      const user = await User.findById(userId);
-      if (user) {
-        return res.json({ success: true, addresses: user.addresses });
-      }
-    } catch (dbErr) {}
-
-    res.json({
-      success: true,
-      addresses: [
-        {
-          _id: 'addr_1',
-          name: 'Flame Fan',
-          phone: '+91 9876543210',
-          street: '77 Anime Boulevard, Flame District',
-          city: 'Tokyo',
-          state: 'Kanto',
-          pincode: '400001',
-          country: 'India',
-          isDefault: true
-        }
-      ]
-    });
+    const user = await User.findById(req.user.id).select('addresses');
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    return res.json({ success: true, addresses: user.addresses });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: 'Unable to load addresses' });
   }
 };
 
 exports.addAddress = async (req, res) => {
   try {
-    const userId = req.user.id;
     const { name, phone, street, city, state, pincode, country = 'India', isDefault = false } = req.body;
-
-    const newAddress = {
-      name,
-      phone,
-      street,
-      city,
-      state,
-      pincode,
-      country,
-      isDefault
-    };
-
-    try {
-      const user = await User.findById(userId);
-      if (user) {
-        if (isDefault) {
-          user.addresses.forEach(a => a.isDefault = false);
-        }
-        user.addresses.push(newAddress);
-        await user.save();
-        return res.status(201).json({ success: true, message: 'Address added!', addresses: user.addresses });
-      }
-    } catch (dbErr) {}
-
-    newAddress._id = 'addr_' + Date.now();
-    res.status(201).json({
-      success: true,
-      message: 'Address added!',
-      addresses: [newAddress]
-    });
+    if (!validAddress({ name, phone, street, city, state, pincode }) || country !== 'India' || typeof isDefault !== 'boolean') {
+      return res.status(400).json({ success: false, message: 'Provide a valid address, phone number, and six-digit pincode' });
+    }
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    if (user.addresses.length >= 20) return res.status(409).json({ success: false, message: 'Address book limit reached' });
+    const makeDefault = isDefault || user.addresses.length === 0;
+    if (makeDefault) user.addresses.forEach(address => { address.isDefault = false; });
+    user.addresses.push({ name: name.trim(), phone: phone.trim(), street: street.trim(), city: city.trim(), state: state.trim(), pincode, country, isDefault: makeDefault });
+    await user.save();
+    return res.status(201).json({ success: true, message: 'Address added', addresses: user.addresses });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: 'Unable to save address' });
   }
 };
 
 exports.deleteAddress = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const { id } = req.params;
-
-    try {
-      const user = await User.findById(userId);
-      if (user) {
-        user.addresses.pull(id);
-        await user.save();
-        return res.json({ success: true, message: 'Address deleted!', addresses: user.addresses });
-      }
-    } catch (dbErr) {}
-
-    res.json({ success: true, message: 'Address deleted!', addresses: [] });
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ success: false, message: 'Invalid address id' });
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    const address = user.addresses.id(req.params.id);
+    if (!address) return res.status(404).json({ success: false, message: 'Address not found' });
+    const wasDefault = address.isDefault;
+    user.addresses.pull(req.params.id);
+    if (wasDefault && user.addresses.length) user.addresses[0].isDefault = true;
+    await user.save();
+    return res.json({ success: true, message: 'Address deleted', addresses: user.addresses });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: 'Unable to delete address' });
   }
 };

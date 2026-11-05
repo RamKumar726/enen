@@ -1,13 +1,7 @@
 const mongoose = require('mongoose');
-const dns = require('dns');
-
-// Set DNS servers to Google DNS for reliable SRV resolution
-try {
-  dns.setServers(['8.8.8.8', '8.8.4.4']);
-} catch (e) {}
-
 const connectDB = async () => {
   try {
+    if (!process.env.MONGO_URI) throw new Error('MONGO_URI environment variable is required');
     const conn = await mongoose.connect(process.env.MONGO_URI, {
       serverSelectionTimeoutMS: 10000
     });

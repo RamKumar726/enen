@@ -192,7 +192,7 @@ const CartPage = () => {
             )}
 
             <div className="flex justify-between">
-              <span>Estimated Tax (18% GST)</span>
+              <span>GST included in item prices (5% / 12%)</span>
               <span className="font-bold text-white">₹{taxAmount.toFixed(2)}</span>
             </div>
 

@@ -11,13 +11,19 @@ const ProductManagement = () => {
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [collectionFilter, setCollectionFilter] = useState('All');
   const [msg, setMsg] = useState(null);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
 
-  const loadProducts = () => {
+  const loadProducts = (requestedPage = page) => {
     setLoading(true);
-    productService.getProducts({ limit: 50 })
+    productService.getAdminProducts({ limit: 50, page: requestedPage, search, category: categoryFilter, collection: collectionFilter })
       .then(res => {
         if (res.success) {
           setProducts(res.products || []);
+          setPage(res.page || requestedPage);
+          setPages(res.pages || 1);
+          setTotalProducts(res.totalProducts || 0);
         }
       })
       .catch(() => {})
@@ -25,18 +31,22 @@ const ProductManagement = () => {
   };
 
   useEffect(() => {
-    loadProducts();
+    const timer = setTimeout(() => loadProducts(1), 250);
+    return () => clearTimeout(timer);
+  }, [search, categoryFilter, collectionFilter]);
+
+  useEffect(() => {
     clanService.getClans().then(res => {
       if (res.success && res.clans?.length > 0) setClans(res.clans);
     }).catch(() => {});
   }, []);
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this product from the vault?')) {
+    if (window.confirm('Archive this product? It will leave the storefront but stay on historical orders.')) {
       try {
         const res = await productService.deleteProduct(id);
         if (res.success) {
-          setMsg('Product deleted successfully');
+          setMsg('Product archived successfully');
           loadProducts();
           setTimeout(() => setMsg(null), 3000);
         }
@@ -44,13 +54,14 @@ const ProductManagement = () => {
     }
   };
 
-  const filteredProducts = products.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) || 
-                          p.animeSeries.toLowerCase().includes(search.toLowerCase());
-    const matchesCat = categoryFilter === 'All' || p.category === categoryFilter;
-    const matchesCol = collectionFilter === 'All' || p.collectionName === collectionFilter;
-    return matchesSearch && matchesCat && matchesCol;
-  });
+  const toggleProductActive = async (product) => {
+    try {
+      await productService.updateProduct(product._id, { isActive: !product.isActive });
+      loadProducts();
+    } catch (err) { setMsg(err.message || 'Could not update product status'); }
+  };
+
+  const filteredProducts = products;
 
   return (
     <div className="space-y-8">
@@ -133,7 +144,7 @@ const ProductManagement = () => {
 
       {/* PRODUCTS TABLE */}
       <div className="bg-[#18181F] border border-[#282834] rounded-3xl p-6 space-y-6 shadow-xl">
-        <h3 className="text-lg font-extrabold text-white">Vault Products ({filteredProducts.length})</h3>
+        <h3 className="text-lg font-extrabold text-white">Vault Products ({totalProducts})</h3>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-gray-300">
@@ -172,8 +183,9 @@ const ProductManagement = () => {
                         {p.stock} units
                       </span>
                     </td>
-                    <td className="p-4 font-bold text-amber-400">★ {p.averageRating || 4.8}</td>
+                    <td className="p-4 font-bold text-amber-400">{p.averageRating > 0 ? `★ ${p.averageRating}` : 'No reviews'}</td>
                     <td className="p-4 flex items-center gap-2">
+                      <span className={`text-[10px] font-bold ${p.isActive ? 'text-emerald-400' : 'text-gray-500'}`}>{p.isActive ? 'Active' : 'Archived'}</span>
                       <Link
                         to={`/admin/products/edit/${p._id}`}
                         className="p-2 bg-[#22222D] hover:bg-[#E85D3D] text-white rounded-xl transition-colors border border-[#282834]"
@@ -182,11 +194,11 @@ const ProductManagement = () => {
                         <Edit className="w-4 h-4" />
                       </Link>
                       <button
-                        onClick={() => handleDelete(p._id)}
+                        onClick={() => p.isActive ? handleDelete(p._id) : toggleProductActive(p)}
                         className="p-2 bg-[#22222D] hover:bg-red-500 text-white rounded-xl transition-colors border border-[#282834]"
-                        title="Delete Product"
+                        title={p.isActive ? 'Archive Product' : 'Reactivate Product'}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        {p.isActive ? <Trash2 className="w-4 h-4" /> : <span className="text-xs font-bold">Restore</span>}
                       </button>
                     </td>
                   </tr>
@@ -195,6 +207,15 @@ const ProductManagement = () => {
             </tbody>
           </table>
         </div>
+        {!loading && pages > 1 && (
+          <div className="flex items-center justify-between border-t border-[#282834] pt-4 text-xs text-gray-300">
+            <span>Page {page} of {pages}</span>
+            <div className="flex gap-2">
+              <button disabled={page <= 1} onClick={() => loadProducts(page - 1)} className="rounded-lg border border-[#282834] px-3 py-2 disabled:opacity-40">Previous</button>
+              <button disabled={page >= pages} onClick={() => loadProducts(page + 1)} className="rounded-lg border border-[#282834] px-3 py-2 disabled:opacity-40">Next</button>
+            </div>
+          </div>
+        )}
       </div>
 
     </div>

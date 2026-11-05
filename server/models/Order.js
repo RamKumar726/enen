@@ -6,7 +6,7 @@ const OrderItemSchema = new mongoose.Schema({
   image: { type: String, required: true },
   price: { type: Number, required: true },
   quantity: { type: Number, required: true, min: 1 },
-  size: { type: String, required: true, enum: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] },
+  size: { type: String, required: true, enum: ['XS', 'S', 'M', 'L', 'XL', 'XXL'] },
   color: { type: String, default: 'Black' }
 }, { _id: false });
 
@@ -33,8 +33,8 @@ const OrderSchema = new mongoose.Schema({
   },
   paymentMethod: { 
     type: String, 
-    enum: ['UPI', 'Cash on Delivery'], 
-    default: 'UPI' 
+    enum: ['Online', 'UPI', 'Cash on Delivery'],
+    default: 'Online'
   },
   paymentStatus: { 
     type: String, 
@@ -44,6 +44,7 @@ const OrderSchema = new mongoose.Schema({
   paymentId: { type: String, default: '' },
   razorpayOrderId: { type: String, default: '' },
   razorpayPaymentId: { type: String, default: '' },
+  paymentHoldExpiresAt: { type: Date, default: undefined },
   orderStatus: { 
     type: String, 
     enum: ['Processing', 'Shipped', 'Delivered', 'Cancelled', 'Return Requested', 'Returned'], 
@@ -54,21 +55,32 @@ const OrderSchema = new mongoose.Schema({
   customerUpiForRefund: { type: String, default: '' },
   refundStatus: { 
     type: String, 
-    enum: ['None', 'Initiated', 'Completed', 'N/A'], 
+    enum: ['None', 'Initiated', 'Processing', 'Completed', 'N/A'],
     default: 'None' 
   },
   refundAmount: { type: Number, default: 0 },
   refundId: { type: String, default: '' },
+  refundReceipt: { type: String, default: '' },
   itemsPrice: { type: Number, required: true, default: 0 },
+  discountAmount: { type: Number, default: 0 },
+  promoCode: { type: String, default: '' },
   taxPrice: { type: Number, required: true, default: 0 },
   shippingPrice: { type: Number, required: true, default: 0 },
   totalAmount: { type: Number, required: true },
   trackingNumber: { type: String, default: '' },
   shiprocketOrderId: { type: String, default: '' },
   shiprocketShipmentId: { type: String, default: '' },
+  shiprocketStatus: { type: String, enum: ['Not Created', 'Creating', 'Created', 'Needs Reconciliation'], default: 'Not Created' },
+  carrierStatus: { type: String, default: '' },
+  carrierUpdatedAt: { type: Date, default: undefined },
   deliveredAt: { type: Date }
 }, {
   timestamps: true
 });
+
+OrderSchema.index({ userId: 1, createdAt: -1 });
+OrderSchema.index({ orderStatus: 1, createdAt: -1 });
+OrderSchema.index({ paymentStatus: 1, paymentHoldExpiresAt: 1 });
+OrderSchema.index({ trackingNumber: 1 }, { sparse: true });
 
 module.exports = mongoose.model('Order', OrderSchema);

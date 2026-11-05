@@ -86,7 +86,7 @@ const Hero = () => {
               </div>
               <div className="text-left">
                 <p className="text-xs font-bold text-white">Express Shipping</p>
-                <p className="text-[11px] text-gray-400">Free Over $50</p>
+                <p className="text-[11px] text-gray-400">Free delivery over ₹999</p>
               </div>
             </div>
           </div>
@@ -117,7 +117,7 @@ const Hero = () => {
               <div>
                 <span className="text-[10px] uppercase font-bold text-[#FF7A00] tracking-wider block">Featured Flame Drop</span>
                 <h4 className="text-base font-extrabold text-white truncate">Rengoku Flame Pillar Tee</h4>
-                <p className="text-xs font-bold text-[#E85D3D]">$24.99 <span className="text-gray-400 line-through text-[11px] ml-1">$34.99</span></p>
+                <p className="text-xs font-bold text-[#E85D3D]">Shop the collection</p>
               </div>
               <Link
                 to="/shop"

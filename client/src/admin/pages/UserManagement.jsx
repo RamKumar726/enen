@@ -8,13 +8,21 @@ const UserManagement = () => {
   const [search, setSearch] = useState('');
   const [msg, setMsg] = useState(null);
   const [msgType, setMsgType] = useState('success'); // 'success' or 'error'
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [roleStats, setRoleStats] = useState({ admins: 0, members: 0 });
 
-  const loadUsers = () => {
+  const loadUsers = (requestedPage = page) => {
     setLoading(true);
-    adminService.getAllUsers()
+    adminService.getAllUsers({ page: requestedPage, limit: 50, search })
       .then(res => {
         if (res.success) {
           setUsersList(res.users || []);
+          setPage(res.page || requestedPage);
+          setPages(res.pages || 1);
+          setTotalUsers(res.totalUsers || 0);
+          setRoleStats(res.stats || { admins: 0, members: 0 });
         }
       })
       .catch((err) => {
@@ -25,8 +33,9 @@ const UserManagement = () => {
   };
 
   useEffect(() => {
-    loadUsers();
-  }, []);
+    const timer = setTimeout(() => loadUsers(1), 250);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const showMsg = (text, type = 'success') => {
     setMsg(text);
@@ -36,6 +45,7 @@ const UserManagement = () => {
 
   const toggleUserRole = async (userId, currentRole) => {
     const newRole = currentRole === 'admin' ? 'user' : 'admin';
+    if (newRole === 'admin' && !window.confirm('Grant this account full administrator access?')) return;
     try {
       const res = await adminService.updateUserRole(userId, newRole);
       if (res.success) {
@@ -47,14 +57,10 @@ const UserManagement = () => {
     }
   };
 
-  const filtered = usersList.filter(u =>
-    (u.email || '').toLowerCase().includes(search.toLowerCase()) ||
-    (u.firstName || '').toLowerCase().includes(search.toLowerCase()) ||
-    (u.lastName || '').toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = usersList;
 
-  const adminCount = usersList.filter(u => u.role === 'admin').length;
-  const userCount = usersList.filter(u => u.role === 'user').length;
+  const adminCount = roleStats.admins;
+  const userCount = roleStats.members;
 
   return (
     <div className="space-y-8">
@@ -73,7 +79,7 @@ const UserManagement = () => {
         {/* Quick stats */}
         <div className="flex gap-4">
           <div className="bg-[#18181F] border border-[#282834] rounded-2xl px-4 py-2 text-center">
-            <p className="text-lg font-black text-white">{usersList.length}</p>
+            <p className="text-lg font-black text-white">{totalUsers}</p>
             <p className="text-[10px] font-bold text-gray-400 uppercase">Total Users</p>
           </div>
           <div className="bg-[#18181F] border border-[#282834] rounded-2xl px-4 py-2 text-center">
@@ -112,7 +118,7 @@ const UserManagement = () => {
 
       <div className="bg-[#18181F] border border-[#282834] rounded-3xl p-6 space-y-6 shadow-xl">
         <h3 className="text-lg font-extrabold text-white">
-          Registered Flame Members ({filtered.length})
+          Registered Flame Members ({filtered.length} shown of {totalUsers})
         </h3>
 
         {loading ? (
@@ -165,6 +171,15 @@ const UserManagement = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+        {!loading && pages > 1 && (
+          <div className="flex items-center justify-between border-t border-[#282834] pt-4 text-xs text-gray-300">
+            <span>Page {page} of {pages}</span>
+            <div className="flex gap-2">
+              <button disabled={page <= 1} onClick={() => loadUsers(page - 1)} className="rounded-lg border border-[#282834] px-3 py-2 disabled:opacity-40">Previous</button>
+              <button disabled={page >= pages} onClick={() => loadUsers(page + 1)} className="rounded-lg border border-[#282834] px-3 py-2 disabled:opacity-40">Next</button>
+            </div>
           </div>
         )}
       </div>

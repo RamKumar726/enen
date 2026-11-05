@@ -1,4 +1,10 @@
 const Carousel = require('../models/Carousel');
+const mongoose = require('mongoose');
+
+const safeImageUrl = value => {
+  try { return new URL(value).protocol === 'https:'; } catch (_) { return false; }
+};
+const safeCtaLink = value => typeof value === 'string' && (value.startsWith('/') && !value.startsWith('//') || safeImageUrl(value));
 
 // Initial default sample carousel banners (Used by seed script)
 const sampleCarouselBanners = [
@@ -56,14 +62,10 @@ const sampleCarouselBanners = [
 
 exports.getActiveBanners = async (req, res) => {
   try {
-    let banners = await Carousel.find({ isActive: true }).sort({ displayOrder: 1 });
-    if (banners.length === 0) {
-      banners = await Carousel.insertMany(sampleCarouselBanners);
-      console.log('[Carousel Controller] Auto-seeded default carousel banners');
-    }
+    const banners = await Carousel.find({ isActive: true }).sort({ displayOrder: 1 });
     res.json({ success: true, banners });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Request could not be completed' });
   }
 };
 
@@ -72,7 +74,7 @@ exports.getAllBanners = async (req, res) => {
     const banners = await Carousel.find().sort({ displayOrder: 1 });
     res.json({ success: true, banners });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Request could not be completed' });
   }
 };
 
@@ -80,8 +82,10 @@ exports.createBanner = async (req, res) => {
   try {
     const { imageUrl, title, description, discountPercentage, ctaText, ctaLink, displayOrder } = req.body;
 
-    if (!imageUrl || !title) {
-      return res.status(400).json({ success: false, message: 'Image URL and Title are required' });
+    if (typeof imageUrl !== 'string' || !safeImageUrl(imageUrl) || typeof title !== 'string' || !title.trim() || title.length > 160 ||
+        (req.body.ctaLink !== undefined && !safeCtaLink(req.body.ctaLink)) ||
+        (discountPercentage !== undefined && (!Number.isFinite(Number(discountPercentage)) || Number(discountPercentage) < 0 || Number(discountPercentage) > 100))) {
+      return res.status(400).json({ success: false, message: 'Provide a valid HTTPS image URL, title, CTA link, and discount percentage' });
     }
 
     const count = await Carousel.countDocuments();
@@ -98,14 +102,21 @@ exports.createBanner = async (req, res) => {
 
     res.status(201).json({ success: true, message: 'Carousel banner created successfully!', banner });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Request could not be completed' });
   }
 };
 
 exports.updateBanner = async (req, res) => {
   try {
     const { id } = req.params;
-    const banner = await Carousel.findByIdAndUpdate(id, req.body, { new: true });
+    if (!mongoose.isValidObjectId(id)) return res.status(404).json({ success: false, message: 'Banner not found' });
+    const allowedFields = ['imageUrl', 'title', 'description', 'discountPercentage', 'ctaText', 'ctaLink', 'displayOrder', 'isActive'];
+    const updates = Object.fromEntries(Object.entries(req.body).filter(([key]) => allowedFields.includes(key)));
+    if (updates.imageUrl !== undefined && !safeImageUrl(updates.imageUrl)) return res.status(400).json({ success: false, message: 'Image URL must use HTTPS' });
+    if (updates.ctaLink !== undefined && !safeCtaLink(updates.ctaLink)) return res.status(400).json({ success: false, message: 'CTA link must be a local path or HTTPS URL' });
+    if (updates.title !== undefined && (typeof updates.title !== 'string' || !updates.title.trim() || updates.title.length > 160)) return res.status(400).json({ success: false, message: 'Invalid banner title' });
+    if (updates.discountPercentage !== undefined && (!Number.isFinite(Number(updates.discountPercentage)) || Number(updates.discountPercentage) < 0 || Number(updates.discountPercentage) > 100)) return res.status(400).json({ success: false, message: 'Discount must be between 0 and 100 percent' });
+    const banner = await Carousel.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
 
     if (!banner) {
       return res.status(404).json({ success: false, message: 'Banner not found' });
@@ -113,12 +124,13 @@ exports.updateBanner = async (req, res) => {
 
     res.json({ success: true, message: 'Banner updated successfully!', banner });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Request could not be completed' });
   }
 };
 
 exports.deleteBanner = async (req, res) => {
   try {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ success: false, message: 'Banner not found' });
     const { id } = req.params;
     const banner = await Carousel.findByIdAndDelete(id);
 
@@ -128,12 +140,13 @@ exports.deleteBanner = async (req, res) => {
 
     res.json({ success: true, message: 'Carousel banner deleted successfully!' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Request could not be completed' });
   }
 };
 
 exports.toggleBannerStatus = async (req, res) => {
   try {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ success: false, message: 'Banner not found' });
     const { id } = req.params;
     const banner = await Carousel.findById(id);
 
@@ -146,7 +159,7 @@ exports.toggleBannerStatus = async (req, res) => {
 
     res.json({ success: true, message: `Banner status toggled to ${banner.isActive ? 'Active' : 'Inactive'}`, banner });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Request could not be completed' });
   }
 };
 

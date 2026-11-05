@@ -12,17 +12,20 @@ const AddEditProduct = () => {
   const [form, setForm] = useState({
     name: '',
     description: '',
-    price: 14.99,
-    originalPrice: 24.99,
-    stock: 50,
+    price: 0,
+    originalPrice: 0,
+    stock: 0,
     category: 'Regular T-Shirt',
     collectionName: 'One Piece',
     animeSeries: 'One Piece',
     fabric: '240 GSM Heavyweight 100% Cotton',
     printType: 'High-Density Puff & Screen Print',
+    hsnCode: '',
+    weightKg: 0,
     images: [{ url: '', alt: 'ENEN Tee' }],
+    colors: [{ name: 'Black', code: '#000000' }],
     sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-    isFeatured: true,
+    isFeatured: false,
     isBestSeller: false,
     isNewArrival: true
   });
@@ -38,7 +41,7 @@ const AddEditProduct = () => {
 
   useEffect(() => {
     if (isEdit) {
-      productService.getProductById(id).then(res => {
+      productService.getAdminProductById(id).then(res => {
         if (res.success && res.product) {
           setForm(res.product);
         }
@@ -48,6 +51,18 @@ const AddEditProduct = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!form.images?.length || form.images.some(image => !/^https:\/\//i.test(image.url))) {
+      setMsg('Add at least one valid HTTPS product image.');
+      return;
+    }
+    if (!form.sizes?.length || !form.colors?.length || form.colors.some(color => !color.name.trim() || !/^#[0-9a-f]{6}$/i.test(color.code))) {
+      setMsg('Select at least one size and provide valid named colors.');
+      return;
+    }
+    if (!Number.isInteger(Number(form.price)) || Number(form.price) <= 0 || !Number.isInteger(Number(form.originalPrice)) || Number(form.stock) < 0) {
+      setMsg('Enter whole-rupee prices, a positive selling price, and non-negative stock.');
+      return;
+    }
     setLoading(true);
 
     try {
@@ -171,12 +186,26 @@ const AddEditProduct = () => {
           </div>
         </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <label className="text-xs font-bold uppercase text-gray-400">HSN Code</label>
+            <input value={form.hsnCode || ''} maxLength={8} onChange={e => setForm({ ...form, hsnCode: e.target.value.replace(/\D/g, '') })} placeholder="Confirm the correct apparel HSN" className="w-full bg-[#121218] border border-[#282834] rounded-xl p-3.5 text-xs text-white" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-bold uppercase text-gray-400">Unit Weight (kg)</label>
+            <input type="number" min="0" max="100" step="0.001" value={form.weightKg ?? 0} onChange={e => setForm({ ...form, weightKg: Number(e.target.value) })} className="w-full bg-[#121218] border border-[#282834] rounded-xl p-3.5 text-xs text-white" />
+          </div>
+          <p className="sm:col-span-2 text-[11px] text-amber-400">Required before creating Shiprocket shipments. Enter verified product tax and packed unit weight values.</p>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-1">
             <label className="text-xs font-bold uppercase text-gray-400">Price (₹)</label>
             <input
               type="number"
-              step="0.01"
+              step="1"
+              min="1"
+              max="10000000"
               required
               value={form.price}
               onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
@@ -188,7 +217,9 @@ const AddEditProduct = () => {
             <label className="text-xs font-bold uppercase text-gray-400">Original Price (₹)</label>
             <input
               type="number"
-              step="0.01"
+              step="1"
+              min="0"
+              max="10000000"
               value={form.originalPrice}
               onChange={(e) => setForm({ ...form, originalPrice: Number(e.target.value) })}
               className="w-full bg-[#121218] border border-[#282834] rounded-xl p-3.5 text-xs text-white focus:outline-none focus:border-[#E85D3D]"
@@ -199,12 +230,29 @@ const AddEditProduct = () => {
             <label className="text-xs font-bold uppercase text-gray-400">Inventory Stock</label>
             <input
               type="number"
+              min="0"
+              max="1000000"
+              step="1"
               required
               value={form.stock}
               onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })}
               className="w-full bg-[#121218] border border-[#282834] rounded-xl p-3.5 text-xs text-white focus:outline-none focus:border-[#E85D3D]"
             />
           </div>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold uppercase text-gray-400">Available Colors</label>
+            <button type="button" onClick={() => setForm({ ...form, colors: [...(form.colors || []), { name: '', code: '#000000' }] })} className="text-xs font-bold text-[#E85D3D]">Add color</button>
+          </div>
+          {(form.colors || []).map((color, index) => (
+            <div key={`${index}-${color.name}`} className="flex items-center gap-3">
+              <input type="color" value={/^#[0-9a-f]{6}$/i.test(color.code || '') ? color.code : '#000000'} onChange={e => setForm({ ...form, colors: form.colors.map((item, i) => i === index ? { ...item, code: e.target.value } : item) })} aria-label={`Color ${index + 1} swatch`} />
+              <input value={color.name} maxLength={40} required placeholder="Color name" onChange={e => setForm({ ...form, colors: form.colors.map((item, i) => i === index ? { ...item, name: e.target.value } : item) })} className="flex-1 bg-[#121218] border border-[#282834] rounded-xl p-3 text-xs text-white" />
+              {(form.colors || []).length > 1 && <button type="button" onClick={() => setForm({ ...form, colors: form.colors.filter((_, i) => i !== index) })} className="text-xs text-red-400">Remove</button>}
+            </div>
+          ))}
         </div>
 
         {/* MULTI-IMAGE MANAGER */}

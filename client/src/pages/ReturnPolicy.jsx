@@ -40,10 +40,10 @@ const ReturnPolicy = () => (
         <p>1. Email support@enen.com with your Order ID and photos of the issue.</p>
         <p>2. Our team will review and approve within 24 hours.</p>
         <p>3. A free pickup will be scheduled at your address.</p>
-        <p>4. Once received and inspected, your refund will be processed within 5–7 business days.</p>
+        <p>4. Once received and inspected, your refund will be processed within 5â€“7 business days.</p>
       </Section>
       <Section title="Refund Method">
-        <p>Refunds are credited to your original payment method. UPI/Card refunds: 5–7 business days. Bank transfers: 3–5 business days.</p>
+        <p>Refunds are credited to your original payment method. UPI/Card refunds: 5â€“7 business days. Bank transfers: 3â€“5 business days.</p>
         <p>COD orders will be refunded via bank transfer (account details required).</p>
       </Section>
       <Section title="Exchange">

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { adminService, orderService } from '../../services/api';
+import { adminService, orderService, paymentService } from '../../services/api';
 import api from '../../services/api';
 import { PackageCheck, Search, Printer, Truck, Wifi, ExternalLink, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
 
@@ -12,6 +12,9 @@ const OrderManagement = () => {
   const [msgType, setMsgType] = useState('success');
   const [shippingOrderId, setShippingOrderId] = useState(null); // which order is being shipped
   const [srConnected, setSrConnected] = useState(null); // null=untested, true, false
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [totalOrders, setTotalOrders] = useState(0);
 
   const showMsg = (text, type = 'success') => {
     setMsg(text);
@@ -19,36 +22,39 @@ const OrderManagement = () => {
     setTimeout(() => setMsg(null), 5000);
   };
 
-  const loadOrders = () => {
+  const loadOrders = (requestedPage = page) => {
     setLoading(true);
-    adminService.getAllOrders()
-      .then(res => { if (res.success) setOrders(res.orders || []); })
+    adminService.getAllOrders({ page: requestedPage, limit: 50, status: statusFilter, search })
+      .then(res => { if (res.success) { setOrders(res.orders || []); setPage(res.page || requestedPage); setPages(res.pages || 1); setTotalOrders(res.totalOrders || 0); } })
       .catch(err => console.error('Failed to load orders:', err))
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { loadOrders(); }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => loadOrders(1), 250);
+    return () => clearTimeout(timer);
+  }, [statusFilter, search]);
 
   const handleUpdateStatus = async (orderId, newStatus) => {
     try {
       const res = await orderService.updateOrderStatus(orderId, { orderStatus: newStatus });
       if (res.success) { showMsg(`Order updated to ${newStatus}`); loadOrders(); }
-    } catch (err) { showMsg('Failed to update order status', 'error'); }
+    } catch (err) { showMsg(err.message || 'Failed to update order status', 'error'); loadOrders(); }
   };
 
-  // â”€â”€ Test Shiprocket connection â”€â”€
+  // Test Shiprocket connection
   const testSRConnection = async () => {
     try {
       const res = await api.get('/shiprocket/test-connection');
       setSrConnected(true);
-      showMsg('âœ… Shiprocket connected successfully!');
+      showMsg('Shiprocket connected successfully!');
     } catch (err) {
       setSrConnected(false);
-      showMsg('âŒ Shiprocket connection failed. Check your credentials in .env', 'error');
+      showMsg('Shiprocket connection failed. Check your credentials in .env', 'error');
     }
   };
 
-  // â”€â”€ Create Shiprocket shipment for an order â”€â”€
+  // Create a Shiprocket shipment for an order
   const handleShipOrder = async (orderId) => {
     setShippingOrderId(orderId);
     try {
@@ -69,17 +75,19 @@ const OrderManagement = () => {
     const customerName = order.userId
       ? `${order.userId.firstName || ''} ${order.userId.lastName || ''}`
       : order.shippingAddress?.name || 'Customer';
-    const customerEmail = order.userId?.email || 'customer@enen.com';
+    const customerEmail = order.userId?.email || '';
     const printWindow = window.open('', '_blank');
-    printWindow.document.write(`<html><head><title>ENEN Invoice - ${order.trackingNumber || order._id}</title>
+    if (!printWindow) { showMsg('Allow popups to print the invoice', 'error'); return; }
+    const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    printWindow.document.write(`<html><head><title>ENEN Invoice - ${escapeHtml(order.trackingNumber || order._id)}</title>
       <style>body{font-family:sans-serif;padding:40px;}.header{display:flex;justify-content:space-between;border-bottom:2px solid #E85D3D;padding-bottom:20px;}.logo{font-size:26px;font-weight:900;color:#E85D3D;}.table{width:100%;border-collapse:collapse;margin-top:25px;}.table th,.table td{border:1px solid #ddd;padding:10px;text-align:left;}.table th{background:#f4f4f4;}</style>
       </head><body>
       <div class="header"><div><div class="logo">ENEN</div><div>UNLEASH THE BLAZE</div></div>
-      <div><h3>INVOICE</h3><p>Order: ${order._id}</p><p>Tracking: ${order.trackingNumber || 'N/A'}</p><p>Date: ${new Date(order.createdAt||Date.now()).toLocaleDateString()}</p><p>Customer: ${customerName}</p></div></div>
-      <h4>Ship To: ${order.shippingAddress?.street || ''}, ${order.shippingAddress?.city || ''}, ${order.shippingAddress?.state || ''} - ${order.shippingAddress?.pincode || ''}</h4>
+      <div><h3>INVOICE</h3><p>Order: ${escapeHtml(order._id)}</p><p>Tracking: ${escapeHtml(order.trackingNumber || 'N/A')}</p><p>Date: ${new Date(order.createdAt||Date.now()).toLocaleDateString()}</p><p>Customer: ${escapeHtml(customerName)}</p></div></div>
+      <p>Ship To: ${escapeHtml(order.shippingAddress?.street)}, ${escapeHtml(order.shippingAddress?.city)}, ${escapeHtml(order.shippingAddress?.state)} - ${escapeHtml(order.shippingAddress?.pincode)}</p>
       <table class="table"><thead><tr><th>Item</th><th>Size</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
-      <tbody>${(order.products||[]).map(p=>`<tr><td>${p.name}</td><td>${p.size}</td><td>${p.quantity}</td><td>â‚¹${p.price}</td><td>â‚¹${(p.price*p.quantity).toFixed(2)}</td></tr>`).join('')}</tbody></table>
-      <h3 style="text-align:right;margin-top:20px;">Total: â‚¹${(order.totalAmount||0).toFixed(2)} (${order.paymentMethod} â€” ${order.paymentStatus})</h3>
+      <tbody>${(order.products||[]).map(p=>`<tr><td>${escapeHtml(p.name)}</td><td>${escapeHtml(p.size)}</td><td>${escapeHtml(p.quantity)}</td><td>&#8377;${escapeHtml(p.price)}</td><td>&#8377;${(p.price*p.quantity).toFixed(2)}</td></tr>`).join('')}</tbody></table>
+      <h3 style="text-align:right;margin-top:20px;">Total: &#8377;${(order.totalAmount||0).toFixed(2)} (${escapeHtml(order.paymentMethod)} — ${escapeHtml(order.paymentStatus)})</h3>
       </body></html>`);
     printWindow.document.close();
     setTimeout(() => printWindow.print(), 500);
@@ -177,7 +185,7 @@ const OrderManagement = () => {
       {/* ORDERS TABLE */}
       <div className="bg-[#18181F] border border-[#282834] rounded-3xl p-6 space-y-6 shadow-xl">
         <h3 className="text-lg font-extrabold text-white">
-          Order Vault ({filteredOrders.length} of {orders.length} total)
+          Order Vault ({filteredOrders.length} on this page, {totalOrders} total)
         </h3>
 
         {loading ? (
@@ -253,16 +261,30 @@ const OrderManagement = () => {
                         {ord.customerUpiForRefund && (
                           <p className="text-[10px] text-purple-400 font-mono mt-1">UPI: {ord.customerUpiForRefund}</p>
                         )}
-                        {ord.paymentStatus === 'Refund Pending' && (
+                        {ord.paymentStatus === 'Refund Pending' && ['Online', 'UPI'].includes(ord.paymentMethod) && ord.refundStatus !== 'Processing' && (
                           <button
                             onClick={async () => {
-                              await orderService.updateOrderStatus(ord._id, { paymentStatus: 'Refunded' });
-                              showMsg(`Marked order #${ord._id.slice(-6)} as Refunded!`);
-                              loadOrders();
+                              try {
+                                const res = await paymentService.refundOrder(ord._id);
+                                showMsg(res.message || 'Refund request sent to Razorpay');
+                                loadOrders();
+                              } catch (err) { showMsg(err.message || 'Refund request failed', 'error'); }
                             }}
                             className="mt-1 px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-bold rounded"
                           >
-                            Mark Refunded
+                            Process Razorpay Refund
+                          </button>
+                        )}
+                        {ord.refundStatus === 'Processing' && <p className="text-[10px] text-amber-300 mt-1">Refund processing with Razorpay</p>}
+                        {ord.paymentStatus === 'Refund Pending' && ord.paymentMethod === 'Cash on Delivery' && (
+                          <button onClick={async () => {
+                            if (!window.confirm('Confirm the COD refund has actually been sent to the customer?')) return;
+                            try {
+                              await orderService.updateOrderStatus(ord._id, { paymentStatus: 'Refunded' });
+                              showMsg('External COD refund recorded'); loadOrders();
+                            } catch (err) { showMsg(err.message || 'Could not record COD refund', 'error'); }
+                          }} className="mt-1 px-2 py-0.5 bg-amber-600 hover:bg-amber-500 text-white text-[9px] font-bold rounded">
+                            Record COD Refund
                           </button>
                         )}
                       </td>
@@ -278,7 +300,7 @@ const OrderManagement = () => {
                           <option value="Shipped">🔵 Shipped</option>
                           <option value="Delivered">🟢 Delivered</option>
                           <option value="Return Requested">🟣 Return Requested</option>
-                          <option value="Returned">🔷 Returned & Refunded</option>
+                          <option value="Returned">🔷 Returned</option>
                           <option value="Cancelled">🔴 Cancelled</option>
                         </select>
                         {ord.cancelReason && (
@@ -291,6 +313,26 @@ const OrderManagement = () => {
 
                       {/* Tracking / Shiprocket button */}
                       <td className="p-4 min-w-[160px]">
+                        {['Needs Reconciliation', 'Creating'].includes(ord.shiprocketStatus) && (
+                          <div className="mb-2 space-y-1">
+                            <p className="text-[10px] text-amber-300">Carrier status needs review</p>
+                            <button onClick={async () => {
+                              if (!window.confirm('Confirm you checked Shiprocket and this order was not created there.')) return;
+                              try { await api.post(`/shiprocket/resolve/${ord._id}`, { resolution: 'no_shipment' }); showMsg('Shipment can be retried'); loadOrders(); }
+                              catch (err) { showMsg(err.message || 'Could not reconcile shipment', 'error'); }
+                            }} className="block text-[10px] text-amber-300 underline">Confirm no shipment exists</button>
+                            <button onClick={async () => {
+                              const srOrderId = window.prompt('Shiprocket order ID', ord.shiprocketOrderId || '');
+                              if (!srOrderId) return;
+                              const shipmentId = window.prompt('Shiprocket shipment ID', ord.shiprocketShipmentId || '');
+                              if (!shipmentId) return;
+                              const awb = window.prompt('AWB (leave blank if not assigned)', ord.trackingNumber || '');
+                              if (awb === null) return;
+                              try { await api.post(`/shiprocket/resolve/${ord._id}`, { resolution: 'shipment_exists', shiprocketOrderId: srOrderId, shiprocketShipmentId: shipmentId, trackingNumber: awb }); showMsg('Carrier shipment linked'); loadOrders(); }
+                              catch (err) { showMsg(err.message || 'Could not reconcile shipment', 'error'); }
+                            }} className="block text-[10px] text-blue-300 underline">Link existing shipment</button>
+                          </div>
+                        )}
                         {alreadyShipped ? (
                           <div className="space-y-1.5">
                             <p className="text-[10px] text-gray-400 font-bold uppercase">AWB:</p>
@@ -303,6 +345,14 @@ const OrderManagement = () => {
                               >
                                 <ExternalLink className="w-3 h-3" /> Track Package
                               </a>
+                            )}
+                            {!ord.trackingNumber && ord.shiprocketStatus === 'Created' && (
+                              <button onClick={async () => {
+                                const awb = window.prompt('Enter the AWB shown in Shiprocket');
+                                if (!awb) return;
+                                try { await orderService.updateOrderStatus(ord._id, { trackingNumber: awb.trim() }); showMsg('AWB saved'); loadOrders(); }
+                                catch (err) { showMsg(err.message || 'Could not save AWB', 'error'); }
+                              }} className="text-[10px] text-amber-300 underline">Enter AWB</button>
                             )}
                           </div>
                         ) : (
@@ -341,6 +391,15 @@ const OrderManagement = () => {
             </table>
           </div>
         )}
+        {!loading && pages > 1 && (
+          <div className="flex items-center justify-between border-t border-[#282834] pt-4 text-xs text-gray-300">
+            <span>Page {page} of {pages}</span>
+            <div className="flex gap-2">
+              <button disabled={page <= 1} onClick={() => loadOrders(page - 1)} className="rounded-lg border border-[#282834] px-3 py-2 disabled:opacity-40">Previous</button>
+              <button disabled={page >= pages} onClick={() => loadOrders(page + 1)} className="rounded-lg border border-[#282834] px-3 py-2 disabled:opacity-40">Next</button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Shiprocket Info Panel */}
@@ -363,7 +422,7 @@ const OrderManagement = () => {
           ))}
         </div>
         <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-400 text-[11px]">
-          âš ï¸ <strong>Setup required:</strong> Add <code className="bg-black/30 px-1 py-0.5 rounded">SHIPROCKET_EMAIL</code> and <code className="bg-black/30 px-1 py-0.5 rounded">SHIPROCKET_PASSWORD</code> to your <code className="bg-black/30 px-1 py-0.5 rounded">server/.env</code> file, then click "Test Shiprocket" above to verify the connection.
+          <strong>Setup required:</strong> Add <code className="bg-black/30 px-1 py-0.5 rounded">SHIPROCKET_EMAIL</code> and <code className="bg-black/30 px-1 py-0.5 rounded">SHIPROCKET_PASSWORD</code> to your <code className="bg-black/30 px-1 py-0.5 rounded">server/.env</code> file, then click "Test Shiprocket" above to verify the connection.
         </div>
       </div>
 

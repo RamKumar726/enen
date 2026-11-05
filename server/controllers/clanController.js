@@ -1,5 +1,8 @@
 const Clan = require('../models/Clan');
 const Product = require('../models/Product');
+const mongoose = require('mongoose');
+
+const isHttpsUrl = value => { try { return new URL(value).protocol === 'https:'; } catch (_) { return false; } };
 
 const defaultClans = [
   { name: 'One Piece', value: 'One Piece', subtitle: 'Warrior of Liberation', image: 'https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?auto=format&fit=crop&w=700&q=80', badge: 'Popular', accent: '#E85D3D', icon: '⚓', displayOrder: 1 },
@@ -9,60 +12,52 @@ const defaultClans = [
   { name: 'My Hero Academia', value: 'My Hero Academia', subtitle: 'Plus Ultra Heroes', image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=700&q=80', badge: 'Hero Exclusive', accent: '#60A5FA', icon: '✊', displayOrder: 5 }
 ];
 
-// Seed initial clans if empty
-const autoSeedClans = async () => {
-  const count = await Clan.countDocuments();
-  if (count === 0) {
-    await Clan.insertMany(defaultClans);
-    console.log('[Clan Controller] Auto-seeded default clans');
-  }
-};
+exports.getDefaultClans = () => defaultClans;
 
 // ── GET PUBLIC CLANS (Active with product counts) ──
 exports.getClans = async (req, res) => {
   try {
-    await autoSeedClans();
     const clans = await Clan.find({ isActive: true }).sort({ displayOrder: 1, createdAt: -1 });
 
     // Attach real-time product count for each clan
     const clansWithCount = await Promise.all(clans.map(async (clan) => {
       const productCount = await Product.countDocuments({ 
         $or: [
-          { collectionName: clan.value },
-          { animeSeries: clan.value }
+          { isActive: true, collectionName: clan.value },
+          { isActive: true, animeSeries: clan.value }
         ]
       });
       return {
         ...clan.toObject(),
-        count: productCount || 3
+        count: productCount
       };
     }));
 
     res.json({ success: true, clans: clansWithCount });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Request could not be completed' });
   }
 };
 
 // ── GET ADMIN CLANS (All including inactive) ──
 exports.getAdminClans = async (req, res) => {
   try {
-    await autoSeedClans();
     const clans = await Clan.find().sort({ displayOrder: 1, createdAt: -1 });
     res.json({ success: true, clans });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Request could not be completed' });
   }
 };
 
 // ── GET SINGLE CLAN ──
 exports.getClanById = async (req, res) => {
   try {
-    const clan = await Clan.findById(req.params.id);
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ success: false, message: 'Clan not found' });
+    const clan = await Clan.findOne({ _id: req.params.id, isActive: true });
     if (!clan) return res.status(404).json({ success: false, message: 'Clan not found' });
     res.json({ success: true, clan });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Request could not be completed' });
   }
 };
 
@@ -71,7 +66,10 @@ exports.createClan = async (req, res) => {
   try {
     const { name, value, subtitle, image, badge, accent, icon, displayOrder, isActive } = req.body;
     
-    if (!name || !image) {
+    if (typeof name !== 'string' || !name.trim() || name.length > 100 || !isHttpsUrl(image) ||
+        (value !== undefined && (typeof value !== 'string' || !value.trim() || value.length > 100)) ||
+        (accent !== undefined && !/^#[0-9a-f]{6}$/i.test(accent)) ||
+        (displayOrder !== undefined && (!Number.isInteger(Number(displayOrder)) || Number(displayOrder) < 1))) {
       return res.status(400).json({ success: false, message: 'Name and Image URL are required' });
     }
 
@@ -89,7 +87,7 @@ exports.createClan = async (req, res) => {
 
     res.status(201).json({ success: true, message: 'Clan created successfully', clan });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Request could not be completed' });
   }
 };
 
@@ -97,12 +95,20 @@ exports.createClan = async (req, res) => {
 exports.updateClan = async (req, res) => {
   try {
     const { id } = req.params;
-    const clan = await Clan.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
+    if (!mongoose.isValidObjectId(id)) return res.status(404).json({ success: false, message: 'Clan not found' });
+    const allowedFields = ['name', 'value', 'subtitle', 'image', 'badge', 'accent', 'icon', 'displayOrder', 'isActive'];
+    const updates = Object.fromEntries(Object.entries(req.body).filter(([key]) => allowedFields.includes(key)));
+    if (updates.name !== undefined && (typeof updates.name !== 'string' || !updates.name.trim() || updates.name.length > 100)) return res.status(400).json({ success: false, message: 'Invalid collection name' });
+    if (updates.value !== undefined && (typeof updates.value !== 'string' || !updates.value.trim() || updates.value.length > 100)) return res.status(400).json({ success: false, message: 'Invalid collection value' });
+    if (updates.image !== undefined && !isHttpsUrl(updates.image)) return res.status(400).json({ success: false, message: 'Collection image must use HTTPS' });
+    if (updates.accent !== undefined && !/^#[0-9a-f]{6}$/i.test(updates.accent)) return res.status(400).json({ success: false, message: 'Accent must be a hex color' });
+    if (updates.displayOrder !== undefined && (!Number.isInteger(Number(updates.displayOrder)) || Number(updates.displayOrder) < 1)) return res.status(400).json({ success: false, message: 'Display order must be a positive integer' });
+    const clan = await Clan.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
     
     if (!clan) return res.status(404).json({ success: false, message: 'Clan not found' });
     res.json({ success: true, message: 'Clan updated successfully', clan });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Request could not be completed' });
   }
 };
 
@@ -110,10 +116,14 @@ exports.updateClan = async (req, res) => {
 exports.deleteClan = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) return res.status(404).json({ success: false, message: 'Clan not found' });
+    const existing = await Clan.findById(id);
+    if (!existing) return res.status(404).json({ success: false, message: 'Clan not found' });
+    if (await Product.countDocuments({ collectionName: existing.value })) return res.status(409).json({ success: false, message: 'Archive this collection instead; products are still linked to it' });
     const clan = await Clan.findByIdAndDelete(id);
     if (!clan) return res.status(404).json({ success: false, message: 'Clan not found' });
     res.json({ success: true, message: 'Clan deleted successfully' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Request could not be completed' });
   }
 };
