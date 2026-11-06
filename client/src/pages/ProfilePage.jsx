@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { userService } from '../services/api';
-import { User, MapPin, PackageCheck, Plus, Trash2, Check, Flame, Shield, Save } from 'lucide-react';
+import { User, MapPin, Plus, Trash2, Check, Flame, Shield, Save } from 'lucide-react';
 
 const ProfilePage = () => {
   const { user } = useAuth();
@@ -84,12 +84,6 @@ const ProfilePage = () => {
           </h1>
         </div>
 
-        <Link
-          to="/orders"
-          className="px-4 py-2 bg-[#18181F] border border-[#282834] hover:border-[#E85D3D] text-white text-xs font-bold rounded-xl flex items-center gap-2 transition-colors"
-        >
-          <PackageCheck className="w-4 h-4 text-[#FF7A00]" /> View Order History
-        </Link>
       </div>
 
       {msg && (

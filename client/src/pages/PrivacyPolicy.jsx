@@ -17,17 +17,16 @@ const PrivacyPolicy = () => (
     </div>
     <div className="bg-[#18181F] border border-[#282834] rounded-3xl p-8 space-y-8">
       <Section title="1. Information We Collect">
-        <p>We collect information you provide when creating an account (name, email, phone), placing orders (shipping address, payment confirmation), and browsing our site (cookies, device info, IP address).</p>
-        <p>We do NOT store card numbers. All payment processing is handled by Razorpay, which is PCI-DSS compliant.</p>
+        <p>We collect account details you provide (such as name and email), wishlist data, and basic technical information needed to operate and secure this site. Purchases are completed on Amazon, which handles checkout information.</p>
       </Section>
       <Section title="2. How We Use Your Information">
-        <p>We use your data to: process and deliver orders, send order confirmation and shipping updates, respond to customer support queries, improve our website experience, and send marketing communications (only with your consent).</p>
+        <p>We use account and wishlist data to provide this site's features, maintain security, and respond to support requests. Amazon handles purchase, delivery, and order updates.</p>
       </Section>
       <Section title="3. Data Sharing">
-        <p>We share your information only with: Razorpay (payment processing), courier partners (delivery), and email service providers. We do not sell your personal data to third parties.</p>
+        <p>When you choose to shop on Amazon, your browser follows the Amazon product link. Amazon's privacy policy governs information you provide there. We do not receive your Amazon order or payment details through this site.</p>
       </Section>
       <Section title="4. Cookies">
-        <p>We use essential cookies for authentication and cart functionality. Analytics cookies help us understand site usage. You can disable cookies in your browser, though some features may not work correctly.</p>
+        <p>We use essential cookies for authentication. You can disable cookies in your browser, though sign-in features may not work correctly.</p>
       </Section>
       <Section title="5. Data Security">
         <p>We use industry-standard encryption (HTTPS/TLS) for all data transmission. Passwords are hashed using bcrypt. JWT tokens expire after 24 hours.</p>
@@ -36,7 +35,7 @@ const PrivacyPolicy = () => (
         <p>You have the right to: access your personal data, correct inaccurate data, delete your account and data, and withdraw consent. Contact us at support@enen.com to exercise these rights.</p>
       </Section>
       <Section title="7. Retention">
-        <p>We retain order records for 7 years as required by Indian tax laws. Account data is deleted within 30 days of account deletion request.</p>
+        <p>We do not store Amazon order records. Account data is retained while your account is active and handled in response to account deletion requests.</p>
       </Section>
       <Section title="8. Contact">
         <p>For privacy concerns: support@enen.com · ENEN Apparel Co., India</p>

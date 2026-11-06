@@ -18,9 +18,9 @@ const ShippingPolicy = () => (
     <div className="bg-[#18181F] border border-[#282834] rounded-3xl p-8 space-y-8">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: "Processing Time", value: "1–2 Business Days" },
-          { label: "Standard Delivery", value: "4–7 Business Days" },
-          { label: "Free Shipping Above", value: "?999" },
+          { label: "Orders", value: "Placed on Amazon" },
+          { label: "Delivery", value: "Managed by Amazon" },
+          { label: "Shipping Cost", value: "Shown on Amazon" },
         ].map(({ label, value }) => (
           <div key={label} className="bg-[#121218] border border-[#282834] rounded-2xl p-4 text-center">
             <p className="text-xs text-gray-500 font-bold uppercase">{label}</p>
@@ -29,18 +29,16 @@ const ShippingPolicy = () => (
         ))}
       </div>
       <Section title="Shipping Charges">
-        <p>Standard shipping: ?99 for orders below ?999</p>
-        <p>FREE shipping on all orders above ?999</p>
-        <p>Express shipping (2–3 days): ?199 (select pincodes)</p>
+        <p>Shipping options and charges are shown by Amazon during checkout.</p>
       </Section>
       <Section title="Delivery Coverage">
-        <p>We ship across India — 27,000+ pincodes via our courier partners (Delhivery, Bluedart, Xpressbees, DTDC). Remote areas may take 1–2 additional days.</p>
+        <p>Amazon shows delivery availability for your address on the product page and during checkout.</p>
       </Section>
       <Section title="Order Tracking">
-        <p>Once your order is shipped, you will receive a tracking number via email. Use this number on our website or the courier partner website to track your package in real time.</p>
+        <p>Amazon provides order tracking and delivery updates for purchases made on Amazon.</p>
       </Section>
       <Section title="Failed Delivery">
-        <p>If delivery fails after 3 attempts, the package is returned to us. We will contact you to rearrange delivery or process a refund (minus shipping costs for COD orders).</p>
+        <p>For a delivery issue, use Amazon's order support for the purchase.</p>
       </Section>
       <Section title="Damaged During Transit">
         <p>If your package arrives damaged, take photos immediately and email support@enen.com within 24 hours of delivery. We will arrange a free replacement.</p>

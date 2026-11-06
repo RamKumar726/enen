@@ -18,7 +18,7 @@ const generateAccessToken = (user) => {
   return jwt.sign(
     { id: user._id, email: user.email, role: user.role, firstName: user.firstName, lastName: user.lastName },
     requireEnv('JWT_SECRET'),
-    { expiresIn: process.env.JWT_EXPIRE || '24h' }
+    { expiresIn: '15m' }
   );
 };
 
@@ -63,13 +63,13 @@ exports.register = async (req, res) => {
 
     if (firstName.trim().length > 80 || lastName.trim().length > 80 || email.length > 254 ||
         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) ||
-        (phone !== undefined && (typeof phone !== 'string' || phone.length > 30 || (phone && !/^\+?[\d\s()-]{7,30}$/.test(phone)))) ||
+        (phone !== undefined && (typeof phone !== 'string' || phone.length > 30 || (phone && (!/^\+?[\d\s()-]{7,30}$/.test(phone) || phone.replace(/\D/g, '').length < 10 || phone.replace(/\D/g, '').length > 15)))) ||
         Buffer.byteLength(password, 'utf8') > 72) {
       return res.status(400).json({ success: false, message: 'Provide a valid name, email, phone number, and password' });
     }
 
-    if (password.length < 12) {
-      return res.status(400).json({ success: false, message: 'Password must be at least 12 characters' });
+    if (password.length < 8) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 8 characters and no more than 72 UTF-8 bytes' });
     }
 
     const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
@@ -209,16 +209,17 @@ exports.logout = async (req, res) => {
 // POST /api/auth/refresh-token
 // ─────────────────────────────────────────
 exports.refreshToken = async (req, res) => {
-  const { refreshToken } = req.cookies || {};
+  const refreshToken = req.cookies?.enen_refresh;
   if (!refreshToken) {
-    return res.status(401).json({ success: false, message: 'Refresh token is required' });
+    return res.json({ success: false, message: 'No active session' });
   }
 
   try {
     const decoded = jwt.verify(refreshToken, requireEnv('JWT_REFRESH_SECRET'));
     const user = await User.findById(decoded.id);
     if (!user || user.refreshToken !== hashRefreshToken(refreshToken)) {
-      return res.status(401).json({ success: false, message: 'Invalid refresh token' });
+      res.clearCookie('enen_refresh', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', path: '/api/auth' });
+      return res.json({ success: false, message: 'No active session' });
     }
 
     const token = generateAccessToken(user);
@@ -230,7 +231,8 @@ exports.refreshToken = async (req, res) => {
     return res.json({ success: true, token, user: { id: user._id, firstName: user.firstName, lastName: user.lastName,
       email: user.email, phone: user.phone, role: user.role, profileImage: user.profileImage, addresses: user.addresses } });
   } catch (err) {
-    return res.status(401).json({ success: false, message: 'Invalid refresh token' });
+    res.clearCookie('enen_refresh', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', path: '/api/auth' });
+    return res.json({ success: false, message: 'No active session' });
   }
 };
 
@@ -319,8 +321,8 @@ exports.resetPassword = async (req, res) => {
     const { password } = req.body;
 
     if (!/^[a-f0-9]{64}$/i.test(token)) return res.status(400).json({ success: false, message: 'Invalid or expired reset token. Please request a new one.' });
-    if (typeof password !== 'string' || password.length < 12 || Buffer.byteLength(password, 'utf8') > 72) {
-      return res.status(400).json({ success: false, message: 'Password must be 12 characters and at most 72 bytes' });
+    if (typeof password !== 'string' || password.length < 8 || Buffer.byteLength(password, 'utf8') > 72) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 8 characters and no more than 72 UTF-8 bytes' });
     }
 
     // Hash the incoming token to compare with stored hash

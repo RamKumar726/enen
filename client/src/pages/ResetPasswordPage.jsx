@@ -16,7 +16,7 @@ const ResetPasswordPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    if (password.length < 12) return setError("Password must be at least 12 characters");
+    if (password.length < 8) return setError("Password must be at least 8 characters");
     if (password !== confirmPassword) return setError("Passwords do not match");
     setLoading(true);
     try {
@@ -68,7 +68,7 @@ const ResetPasswordPage = () => {
                   <label className="text-xs font-bold uppercase text-gray-400">New Password</label>
                   <div className="relative">
                     <input type={showPassword ? "text" : "password"} required value={password}
-                      minLength={12} maxLength={72} onChange={(e) => setPassword(e.target.value)} placeholder="At least 12 characters"
+                      minLength={8} maxLength={72} autoComplete="new-password" onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters"
                       className="w-full bg-[#121218] border border-[#282834] rounded-xl p-3.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#E85D3D] pr-12" />
                     <button type="button" onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300">
@@ -79,7 +79,7 @@ const ResetPasswordPage = () => {
                 <div className="space-y-1">
                   <label className="text-xs font-bold uppercase text-gray-400">Confirm New Password</label>
                   <input type={showPassword ? "text" : "password"} required value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter your password"
+                    minLength={8} maxLength={72} autoComplete="new-password" onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter your password"
                     className="w-full bg-[#121218] border border-[#282834] rounded-xl p-3.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#E85D3D]" />
                 </div>
                 <button type="submit" disabled={loading}

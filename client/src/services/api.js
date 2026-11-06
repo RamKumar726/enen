@@ -44,6 +44,7 @@ api.interceptors.response.use(
         if (!refreshInFlight) refreshInFlight = axios.post(`${API_URL}/auth/refresh-token`, {}, { withCredentials: true });
         const refreshed = await refreshInFlight;
         refreshInFlight = null;
+        if (!refreshed.data?.success || !refreshed.data?.token) throw new Error('Session expired');
         setAccessToken(refreshed.data.token);
         original.headers.Authorization = `Bearer ${refreshed.data.token}`;
         return api(original);
@@ -93,29 +94,9 @@ export const productService = {
   getProductById: (id) => api.get(`/products/${id}`),
   getAdminProductById: (id) => api.get(`/products/admin/${id}`),
   getAdminProducts: (params) => api.get('/products/admin', { params }),
-  addReview: (id, reviewData) => api.post(`/products/${id}/reviews`, reviewData),
   createProduct: (data) => api.post('/products', data),
   updateProduct: (id, data) => api.put(`/products/${id}`, data),
   deleteProduct: (id) => api.delete(`/products/${id}`)
-};
-
-// Cart Services
-export const cartService = {
-  getCart: () => api.get('/cart'),
-  addToCart: (data) => api.post('/cart', data),
-  updateCartItem: (itemId, quantity) => api.put(`/cart/${itemId}`, { quantity }),
-  removeFromCart: (itemId) => api.delete(`/cart/${itemId}`),
-  clearCart: () => api.delete('/cart/clear')
-};
-
-// Order Services
-export const orderService = {
-  createOrder: (orderData) => api.post('/orders', orderData),
-  getUserOrders: (params) => api.get('/orders', { params }),
-  getOrderById: (id) => api.get(`/orders/${id}`),
-  cancelOrder: (id, data) => api.post(`/orders/${id}/cancel`, data),
-  requestReturn: (id, data) => api.post(`/orders/${id}/return`, data),
-  updateOrderStatus: (id, statusData) => api.put(`/orders/${id}`, statusData)
 };
 
 // User Services
@@ -130,17 +111,8 @@ export const userService = {
 // Admin Services
 export const adminService = {
   getDashboard: () => api.get('/admin/dashboard'),
-  getAnalytics: () => api.get('/admin/analytics'),
-  getAllOrders: (params) => api.get('/admin/orders', { params }),
   getAllUsers: (params) => api.get('/admin/users', { params }),
   updateUserRole: (id, role) => api.put(`/admin/users/${id}/role`, { role })
-};
-
-// Payment Services
-export const paymentService = {
-  createRazorpayOrder: (data) => api.post('/payment/razorpay-order', data),
-  verifyRazorpayPayment: (data) => api.post('/payment/razorpay-verify', data),
-  refundOrder: (id) => api.post(`/payment/refund/${id}`)
 };
 
 export default api;

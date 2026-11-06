@@ -495,7 +495,7 @@ exports.getProducts = async (req, res) => {
   try {
     const { category, collection, featured, bestseller, search, sort, minPrice, maxPrice, size, color, page = 1, limit = 12 } = req.query;
 
-    let query = { isActive: false };
+    let query = { isActive: true };
 
     if (category && category !== 'All') {
       query.category = category;
@@ -508,8 +508,15 @@ exports.getProducts = async (req, res) => {
     if (featured === 'true') query.isFeatured = true;
     if (bestseller === 'true') query.isBestSeller = true;
 
-    if (size) query.sizes = size;
-    if (color) query['colors.name'] = new RegExp(color, 'i');
+    if (size) {
+      if (!['XS', 'S', 'M', 'L', 'XL', 'XXL'].includes(size)) return res.status(400).json({ success: false, message: 'Invalid size filter' });
+      query.sizes = size;
+    }
+    if (color) {
+      if (String(color).length > 40) return res.status(400).json({ success: false, message: 'Color filter is too long' });
+      const safeColor = String(color).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      query['colors.name'] = new RegExp(`^${safeColor}$`, 'i');
+    }
 
     if ((minPrice !== undefined && (!Number.isFinite(Number(minPrice)) || Number(minPrice) < 0)) ||
         (maxPrice !== undefined && (!Number.isFinite(Number(maxPrice)) || Number(maxPrice) < 0))) {
@@ -565,7 +572,7 @@ exports.getProductById = async (req, res) => {
   try {
     const { id } = req.params;
     if (!mongoose.isValidObjectId(id)) return res.status(404).json({ success: false, message: 'Product not found' });
-    const product = await Product.findOne({ _id: id, isActive: false });
+    const product = await Product.findOne({ _id: id, isActive: true });
 
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
@@ -613,8 +620,9 @@ exports.getAdminProducts = async (req, res) => {
 
 exports.createProduct = async (req, res) => {
   try {
-    const allowedFields = ['name', 'slug', 'description', 'price', 'originalPrice', 'stock', 'images', 'sizes', 'colors', 'category', 'collectionName', 'animeSeries', 'fabric', 'printType', 'hsnCode', 'weightKg', 'isFeatured', 'isBestSeller', 'isNewArrival', 'isActive'];
+    const allowedFields = ['name', 'slug', 'description', 'price', 'amazonUrl', 'originalPrice', 'stock', 'images', 'sizes', 'colors', 'category', 'collectionName', 'animeSeries', 'fabric', 'printType', 'hsnCode', 'weightKg', 'isFeatured', 'isBestSeller', 'isNewArrival', 'isActive'];
     const input = Object.fromEntries(Object.entries(req.body).filter(([key]) => allowedFields.includes(key)));
+    if (input.isActive !== false && !input.amazonUrl) return res.status(400).json({ success: false, message: 'Add the Amazon product URL before activating a product' });
     if (!validProductOptions(input)) return res.status(400).json({ success: false, message: 'Images, sizes, or color options are invalid' });
     const product = await Product.create(input);
     res.status(201).json({ success: true, message: 'Product created successfully', product });
@@ -628,8 +636,16 @@ exports.updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
     if (!mongoose.isValidObjectId(id)) return res.status(404).json({ success: false, message: 'Product not found' });
-    const allowedFields = ['name', 'slug', 'description', 'price', 'originalPrice', 'stock', 'images', 'sizes', 'colors', 'category', 'collectionName', 'animeSeries', 'fabric', 'printType', 'hsnCode', 'weightKg', 'isFeatured', 'isBestSeller', 'isNewArrival', 'isActive'];
+    const allowedFields = ['name', 'slug', 'description', 'price', 'amazonUrl', 'originalPrice', 'stock', 'images', 'sizes', 'colors', 'category', 'collectionName', 'animeSeries', 'fabric', 'printType', 'hsnCode', 'weightKg', 'isFeatured', 'isBestSeller', 'isNewArrival', 'isActive'];
     const updates = Object.fromEntries(Object.entries(req.body).filter(([key]) => allowedFields.includes(key)));
+    if (updates.amazonUrl !== undefined && !updates.amazonUrl && updates.isActive !== false) {
+      const existing = await Product.findById(id).select('isActive');
+      if (existing?.isActive) return res.status(400).json({ success: false, message: 'Active products must keep a valid Amazon product URL' });
+    }
+    if (updates.isActive === true && !updates.amazonUrl) {
+      const existing = await Product.findById(id).select('amazonUrl');
+      if (!existing?.amazonUrl) return res.status(400).json({ success: false, message: 'Add the Amazon product URL before activating a product' });
+    }
     if (!validProductOptions(updates)) return res.status(400).json({ success: false, message: 'Images, sizes, or color options are invalid' });
     const product = await Product.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
 
@@ -655,54 +671,6 @@ exports.deleteProduct = async (req, res) => {
     }
 
     res.json({ success: true, message: 'Product archived successfully', product });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Request could not be completed' });
-  }
-};
-
-exports.addProductReview = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!mongoose.isValidObjectId(id)) return res.status(404).json({ success: false, message: 'Product not found' });
-    const { rating, comment } = req.body;
-
-    const numericRating = Number(rating);
-    if (!Number.isInteger(numericRating) || numericRating < 1 || numericRating > 5 || typeof comment !== 'string' || !comment.trim() || comment.length > 2000) {
-      return res.status(400).json({ success: false, message: 'Provide a rating from 1 to 5 and a comment under 2,000 characters' });
-    }
-
-    const verifiedPurchase = await require('../models/Order').exists({ userId: req.user.id, orderStatus: 'Delivered', 'products.productId': id });
-    if (!verifiedPurchase) return res.status(403).json({ success: false, message: 'A delivered purchase is required to review this product' });
-
-    const product = await Product.findOne({ _id: id, isActive: false });
-    if (!product) {
-      return res.status(404).json({ success: false, message: 'Product not found' });
-    }
-
-    // Check if user has already reviewed this product
-    const alreadyReviewed = product.ratings.find(
-      r => r.userId && r.userId.toString() === req.user.id
-    );
-    if (alreadyReviewed) {
-      return res.status(400).json({ success: false, message: 'You have already reviewed this product' });
-    }
-
-    const newReview = {
-      userId: req.user.id,
-      userName: `${req.user.firstName || 'Anime'} ${req.user.lastName || 'Fan'}`,
-      rating: numericRating,
-      comment: comment.trim(),
-      createdAt: new Date()
-    };
-
-    product.ratings.push(newReview);
-    product.numReviews = product.ratings.length;
-    product.averageRating = Number(
-      (product.ratings.reduce((acc, item) => item.rating + acc, 0) / product.ratings.length).toFixed(1)
-    );
-    await product.save();
-
-    res.status(201).json({ success: true, message: 'Review added successfully!', product });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Request could not be completed' });
   }

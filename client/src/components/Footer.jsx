@@ -21,10 +21,8 @@ const Footer = () => {
     { to: '/collection/One Piece', label: 'One Piece Collection' },
     { to: '/collection/Demon Slayer', label: 'Demon Slayer' },
     { to: '/collection/Naruto', label: 'Naruto Collection' },
-    { to: '/cart', label: 'View Cart' },
   ];
   const supportLinks = [
-    { to: '/orders', label: 'Order Tracking' },
     { to: '/profile', label: 'My Account' },
     { to: '/shipping-policy', label: 'Shipping Policy' },
     { to: '/return-policy', label: 'Returns & Refunds' },
@@ -160,11 +158,11 @@ const Footer = () => {
         <div className="flex flex-col sm:flex-row items-center justify-between text-[11px] text-[#A8A8A8] dark:text-gray-600 gap-3">
           <p>© {new Date().getFullYear()} ENEN Apparel Co. All rights reserved.</p>
           <div className="flex items-center gap-4">
-            <span>Payment options shown at checkout</span>
+            <span>Shop ENEN on Amazon</span>
             <span className="text-[#E85D3D]/40">•</span>
-            <span>Secure checkout</span>
+            <span>Secure Amazon checkout</span>
             <span className="text-[#E85D3D]/40">•</span>
-            <span>Delivery details at checkout</span>
+            <span>Delivery details on Amazon</span>
           </div>
         </div>
       </div>

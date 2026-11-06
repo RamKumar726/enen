@@ -1,13 +1,13 @@
 const mongoose = require('mongoose');
 
 const ColorSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  code: { type: String, required: true }
+  name: { type: String, required: true, trim: true, maxlength: 40 },
+  code: { type: String, required: true, match: /^#[0-9a-f]{6}$/i }
 }, { _id: false });
 
 const ImageSchema = new mongoose.Schema({
-  url: { type: String, required: true },
-  alt: { type: String, default: 'ENEN T-Shirt' }
+  url: { type: String, required: true, maxlength: 2048, match: /^https:\/\//i },
+  alt: { type: String, default: 'ENEN T-Shirt', maxlength: 160 }
 }, { _id: false });
 
 const ReviewItemSchema = new mongoose.Schema({
@@ -19,12 +19,13 @@ const ReviewItemSchema = new mongoose.Schema({
 }, { _id: true });
 
 const ProductSchema = new mongoose.Schema({
-  name: { type: String, required: [true, 'Product name is required'], trim: true },
-  slug: { type: String, lowercase: true, trim: true },
-  description: { type: String, required: [true, 'Product description is required'] },
-  price: { type: Number, required: [true, 'Product price is required'], min: 1, validate: Number.isInteger },
-  originalPrice: { type: Number, default: 0, min: 0, validate: Number.isInteger },
-  stock: { type: Number, required: [true, 'Stock count is required'], default: 0, min: 0, validate: Number.isInteger },
+  name: { type: String, required: [true, 'Product name is required'], trim: true, maxlength: 160 },
+  slug: { type: String, lowercase: true, trim: true, maxlength: 120, match: /^[a-z0-9]+(?:-[a-z0-9]+)*$/ },
+  description: { type: String, required: [true, 'Product description is required'], trim: true, maxlength: 5000 },
+  price: { type: Number, required: [true, 'Product price is required'], min: 1, max: 10000000, validate: Number.isInteger },
+  amazonUrl: { type: String, trim: true, default: '', required: [function() { return this.isActive; }, 'Amazon product URL is required for active products'], validate: { validator: value => !value || /^https:\/\/(?:(?:www\.)?amazon\.in\/(?:[^/?#]+\/)?(?:dp\/|gp\/product\/)[A-Z0-9]{10}(?:[/?#].*)?|amzn\.in\/d\/[A-Z0-9]+(?:[/?#].*)?)$/i.test(value), message: 'Enter a valid Amazon.in product URL' } },
+  originalPrice: { type: Number, default: 0, min: 0, max: 10000000, validate: Number.isInteger },
+  stock: { type: Number, required: [true, 'Stock count is required'], default: 0, min: 0, max: 10000000, validate: Number.isInteger },
   images: { type: [ImageSchema], validate: [items => items.length > 0, 'At least one product image is required'] },
   sizes: { 
     type: [String], 
@@ -39,9 +40,9 @@ const ProductSchema = new mongoose.Schema({
     default: 'Regular T-Shirt'
   },
   collectionName: { type: String, required: true, trim: true, maxlength: 100, default: 'One Piece' },
-  animeSeries: { type: String, default: 'General Anime' },
-  fabric: { type: String, default: '240 GSM Heavyweight 100% Cotton' },
-  printType: { type: String, default: 'High-Density Puff & Screen Print' },
+  animeSeries: { type: String, default: 'General Anime', trim: true, maxlength: 100 },
+  fabric: { type: String, default: '240 GSM Heavyweight 100% Cotton', trim: true, maxlength: 160 },
+  printType: { type: String, default: 'High-Density Puff & Screen Print', trim: true, maxlength: 160 },
   hsnCode: { type: String, default: '', trim: true, maxlength: 8 },
   weightKg: { type: Number, default: 0, min: 0 },
   isFeatured: { type: Boolean, default: false },

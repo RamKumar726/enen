@@ -1,26 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, ShoppingBag, Trash2, ArrowLeft, Sparkles, Star, Flame } from 'lucide-react';
 import { useWishlist } from '../context/WishlistContext';
-import { useCart } from '../context/CartContext';
 
 const WishlistPage = () => {
   const { wishlistItems, removeFromWishlist, clearWishlist } = useWishlist();
-  const { addToCart } = useCart();
   const navigate = useNavigate();
-  const [addedIds, setAddedIds] = useState({});
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
-  const handleAddToCart = (product) => {
-    const size = product.sizes?.[0] || 'M';
-    const color = product.colors?.[0]?.name || 'Black';
-    addToCart(product, size, color, 1);
-    const pid = product._id || product.id;
-    setAddedIds((prev) => ({ ...prev, [pid]: true }));
-    setTimeout(() => setAddedIds((prev) => ({ ...prev, [pid]: false })), 2000);
-  };
+  const openProduct = (product) => navigate(`/product/${product._id || product.slug}`);
 
   if (wishlistItems.length === 0) {
     return (
@@ -89,7 +79,6 @@ const WishlistPage = () => {
             const discount = product.originalPrice > product.price
               ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
               : null;
-            const isAdded = addedIds[pid];
 
             return (
               <motion.div
@@ -156,15 +145,11 @@ const WishlistPage = () => {
                     </div>
                     <motion.button
                       whileTap={{ scale: 0.9 }}
-                      onClick={() => handleAddToCart(product)}
-                      className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all ${
-                        isAdded
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-gradient-to-r from-[#C94A20] to-[#E85D3D] text-white shadow-sm hover:shadow-flame-glow'
-                      }`}
+                      onClick={() => openProduct(product)}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all bg-gradient-to-r from-[#C94A20] to-[#E85D3D] text-white shadow-sm hover:shadow-flame-glow"
                     >
                       <ShoppingBag className="w-3 h-3" />
-                      {isAdded ? 'Added' : 'Add'}
+                      View
                     </motion.button>
                   </div>
                 </div>

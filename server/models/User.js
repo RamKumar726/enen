@@ -13,16 +13,17 @@ const AddressSchema = new mongoose.Schema({
 }, { _id: true });
 
 const UserSchema = new mongoose.Schema({
-  firstName: { type: String, required: [true, 'First name is required'] },
-  lastName: { type: String, required: [true, 'Last name is required'] },
+  firstName: { type: String, required: [true, 'First name is required'], trim: true, maxlength: 80 },
+  lastName: { type: String, required: [true, 'Last name is required'], trim: true, maxlength: 80 },
   email: { 
     type: String, 
     required: [true, 'Email is required'], 
     unique: true,
     lowercase: true,
-    trim: true
+    trim: true,
+    maxlength: 254
   },
-  password: { type: String, required: [true, 'Password is required'], minlength: 6 },
+  password: { type: String, required: [true, 'Password is required'], minlength: 8, maxlength: 72 },
   phone: { type: String, default: '' },
   profileImage: { type: String, default: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80' },
   role: { type: String, enum: ['user', 'admin'], default: 'user' },

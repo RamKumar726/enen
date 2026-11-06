@@ -33,9 +33,9 @@ const Counter = ({ to, suffix = '' }) => {
 };
 
 const trustItems = [
-  { icon: Truck,     title: 'Free Shipping', desc: 'Orders over ₹999',       color: '#E85D3D' },
-  { icon: Shield,    title: 'Secure Pay',    desc: 'Razorpay encrypted',      color: '#FF7A00' },
-  { icon: RefreshCw, title: '7-Day Swap',    desc: 'Easy size exchanges',     color: '#F59E0B' },
+  { icon: Truck,     title: 'Amazon Delivery', desc: 'Options shown on Amazon', color: '#E85D3D' },
+  { icon: Shield,    title: 'Secure Checkout', desc: 'Handled by Amazon', color: '#FF7A00' },
+  { icon: RefreshCw, title: 'Amazon Returns', desc: 'See Amazon policy', color: '#F59E0B' },
   { icon: Flame,     title: 'Certified',     desc: 'Original ENEN prints',    color: '#F43F5E' },
 ];
 
@@ -59,7 +59,7 @@ const Home = () => {
           <div className="ticker-inner">
             {[...Array(2)].map((_, i) => (
               <span key={i} className="flex items-center gap-8 pr-8">
-                {['UNLEASH THE BLAZE ✦', '240 GSM HEAVYWEIGHT ✦', 'ANIME STREETWEAR ✦', 'FREE SHIPPING ✦', 'BLAZE10 ✦', 'NEW DROPS ✦', 'ENEN ORIGINAL ✦'].map(t => (
+                {['UNLEASH THE BLAZE ✦', '240 GSM HEAVYWEIGHT ✦', 'ANIME STREETWEAR ✦', 'SHOP ON AMAZON ✦', 'NEW DROPS ✦', 'ENEN ORIGINAL ✦'].map(t => (
                   <span key={t} className="text-white font-black text-[10px] sm:text-xs tracking-[0.15em] uppercase">{t}</span>
                 ))}
               </span>

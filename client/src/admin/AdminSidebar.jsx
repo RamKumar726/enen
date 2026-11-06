@@ -4,9 +4,7 @@ import {
   LayoutDashboard, 
   Sliders, 
   ShoppingBag, 
-  PackageCheck, 
   Users, 
-  BarChart3, 
   Flame, 
   ArrowLeft,
   LogOut
@@ -22,9 +20,7 @@ const AdminSidebar = () => {
     { name: 'Carousel Banners', path: '/admin/carousel', icon: Sliders, badge: 'Deals' },
     { name: 'Choose Your Clan', path: '/admin/clans', icon: Flame, badge: 'Vaults' },
     { name: 'Product Management', path: '/admin/products', icon: ShoppingBag },
-    { name: 'Order Management', path: '/admin/orders', icon: PackageCheck },
     { name: 'User Accounts', path: '/admin/users', icon: Users },
-    { name: 'Analytics & Revenue', path: '/admin/analytics', icon: BarChart3 }
   ];
 
   return (

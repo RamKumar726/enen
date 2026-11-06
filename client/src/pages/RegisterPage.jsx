@@ -34,8 +34,8 @@ const RegisterPage = () => {
       return;
     }
 
-    if (formData.password.length < 12) {
-      setValidationErr('Password must be at least 12 characters');
+    if (formData.password.length < 8) {
+      setValidationErr('Password must be at least 8 characters');
       return;
     }
 
@@ -66,7 +66,7 @@ const RegisterPage = () => {
             <Flame className="w-7 h-7" />
           </div>
           <h1 className="text-2xl font-extrabold text-white">JOIN THE <span className="text-flame-gradient">FLAME ORDER</span></h1>
-          <p className="text-xs text-gray-400">Create an account for early drop access and order tracking</p>
+          <p className="text-xs text-gray-400">Create an account to save your wishlist and shop on Amazon</p>
         </div>
 
         {(error || validationErr) && (
@@ -83,6 +83,7 @@ const RegisterPage = () => {
                 type="text"
                 name="firstName"
                 required
+                maxLength={80}
                 placeholder="Rengoku"
                 value={formData.firstName}
                 onChange={handleChange}
@@ -95,6 +96,7 @@ const RegisterPage = () => {
                 type="text"
                 name="lastName"
                 required
+                maxLength={80}
                 placeholder="Kyojuro"
                 value={formData.lastName}
                 onChange={handleChange}
@@ -110,6 +112,7 @@ const RegisterPage = () => {
                 type="email"
                 name="email"
                 required
+                maxLength={254}
                 placeholder="flame@enen.com"
                 value={formData.email}
                 onChange={handleChange}
@@ -125,6 +128,8 @@ const RegisterPage = () => {
               <input
                 type="tel"
                 name="phone"
+                maxLength={30}
+                pattern="\+?[\d\s()-]{7,30}"
                 placeholder="+91 9876543210"
                 value={formData.phone}
                 onChange={handleChange}
@@ -141,7 +146,10 @@ const RegisterPage = () => {
                 type="password"
                 name="password"
                 required
-                placeholder="••••••••"
+                minLength={8}
+                maxLength={72}
+                autoComplete="new-password"
+                placeholder="At least 8 characters"
                 value={formData.password}
                 onChange={handleChange}
                 className="w-full bg-[#121218] border border-[#282834] rounded-xl p-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#E85D3D]"
@@ -154,7 +162,10 @@ const RegisterPage = () => {
                 type="password"
                 name="confirmPassword"
                 required
-                placeholder="••••••••"
+                minLength={8}
+                maxLength={72}
+                autoComplete="new-password"
+                placeholder="Re-enter your password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 className="w-full bg-[#121218] border border-[#282834] rounded-xl p-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#E85D3D]"

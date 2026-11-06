@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ShoppingBag, Search, User, Menu, X, LogOut,
+  Search, User, Menu, X, LogOut,
   PackageCheck, UserCheck, ChevronDown, LayoutDashboard,
   Sparkles, Layers, Shirt, Sun, Moon, Flame, Heart, Package, ArrowRight
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useCart } from '../context/CartContext';
 import { useTheme } from '../context/ThemeContext';
 import { useWishlist } from '../context/WishlistContext';
 import { clanService } from '../services/api';
@@ -55,7 +54,6 @@ const itemVariants = {
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
-  const { totalQuantity, toggleCart } = useCart();
   const { isDark, toggleTheme } = useTheme();
   const { wishlistCount } = useWishlist();
 
@@ -66,7 +64,6 @@ const Navbar = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isTrackOpen, setIsTrackOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [trackOrderId, setTrackOrderId] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
 
   const navigate = useNavigate();
@@ -95,12 +92,10 @@ const Navbar = () => {
 
   const handleTrackOrder = (e) => {
     e.preventDefault();
-    if (trackOrderId.trim()) {
-      navigate(`/orders?track=${encodeURIComponent(trackOrderId.trim())}`);
-      setIsTrackOpen(false);
-      setTrackOrderId('');
-    }
+    window.open('https://www.amazon.in/gp/your-account/order-history', '_blank', 'noopener,noreferrer');
+    setIsTrackOpen(false);
   };
+
 
   const categories = [
     { name: 'Sleeveless T-Shirts', value: 'Sleeveless', icon: <SleevelessIcon className="w-4 h-4 text-[#E85D3D]" /> },
@@ -277,20 +272,18 @@ const Navbar = () => {
                       <form onSubmit={handleTrackOrder} className="flex gap-2">
                         <input
                           type="text"
-                          placeholder="Enter Order ID..."
-                          value={trackOrderId}
-                          onChange={(e) => setTrackOrderId(e.target.value)}
-                          autoFocus
+                          value="Amazon order history"
+                          readOnly
                           className="flex-1 bg-black/5 dark:bg-white/5 border border-[#DDD9D0] dark:border-white/10 focus:border-[#E85D3D]/60 rounded-xl py-2 px-3 text-xs text-[#1C1C1C] dark:text-white placeholder-[#A8A8A8] dark:placeholder-gray-500 focus:outline-none transition-all"
                         />
                         <button type="submit" className="px-3 py-2 bg-gradient-to-r from-[#D9480F] to-[#E85D3D] text-white text-xs font-bold rounded-xl hover:shadow-flame-glow transition-all flex-shrink-0">
-                          Go
+                          Open
                         </button>
                       </form>
                       {isAuthenticated && (
-                        <Link to="/orders" onClick={() => setIsTrackOpen(false)} className="block text-center text-[10px] text-[#E85D3D] hover:underline font-semibold">
-                          View all my orders →
-                        </Link>
+                        <a href="https://www.amazon.in/gp/your-account/order-history" target="_blank" rel="noreferrer" onClick={() => setIsTrackOpen(false)} className="block text-center text-[10px] text-[#E85D3D] hover:underline font-semibold">
+                          Open Amazon order history →
+                        </a>
                       )}
                     </div>
                   </motion.div>
@@ -321,21 +314,6 @@ const Navbar = () => {
             <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setIsSearchOpen(true)}
               className="p-2.5 text-[#7A7A7A] dark:text-gray-400 hover:text-[#1C1C1C] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl transition-all border border-transparent hover:border-[#DDD9D0] dark:hover:border-white/10">
               <Search className="w-5 h-5" />
-            </motion.button>
-
-            {/* Cart */}
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={toggleCart}
-              className="relative p-2.5 text-[#7A7A7A] dark:text-gray-400 hover:text-[#1C1C1C] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl transition-all border border-transparent hover:border-[#E85D3D]/30 group">
-              <ShoppingBag className="w-5 h-5 group-hover:text-[#E85D3D] transition-colors" />
-              <AnimatePresence>
-                {totalQuantity > 0 && (
-                  <motion.span key="badge" initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0 }}
-                    transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                    className="absolute -top-1 -right-1 bg-gradient-to-br from-[#E85D3D] to-[#FF7A00] text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg">
-                    {totalQuantity}
-                  </motion.span>
-                )}
-              </AnimatePresence>
             </motion.button>
 
             {/* User Menu */}
@@ -381,10 +359,10 @@ const Navbar = () => {
                           className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-[#4A4A4A] dark:text-gray-300 hover:text-[#1C1C1C] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl transition-colors">
                           <UserCheck className="w-4 h-4 text-[#E85D3D]" /> My Profile
                         </Link>
-                        <Link to="/orders" onClick={() => setIsUserMenuOpen(false)}
+                        <a href="https://www.amazon.in/gp/your-account/order-history" target="_blank" rel="noreferrer" onClick={() => setIsUserMenuOpen(false)}
                           className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-[#4A4A4A] dark:text-gray-300 hover:text-[#1C1C1C] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl transition-colors">
                           <PackageCheck className="w-4 h-4 text-[#FF7A00]" /> My Orders
-                        </Link>
+                        </a>
                         <Link to="/wishlist" onClick={() => setIsUserMenuOpen(false)}
                           className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-[#4A4A4A] dark:text-gray-300 hover:text-[#1C1C1C] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl transition-colors">
                           <Heart className="w-4 h-4 text-[#E85D3D]" /> My Wishlist
@@ -452,13 +430,12 @@ const Navbar = () => {
                   <form onSubmit={handleTrackOrder} className="flex gap-2 px-1">
                     <input
                       type="text"
-                      placeholder="Enter Order ID..."
-                      value={trackOrderId}
-                      onChange={(e) => setTrackOrderId(e.target.value)}
+                      value="Amazon order history"
+                      readOnly
                       className="flex-1 bg-black/5 dark:bg-white/5 border border-[#DDD9D0] dark:border-white/10 focus:border-[#E85D3D]/60 rounded-xl py-2.5 px-3 text-xs text-[#1C1C1C] dark:text-white placeholder-[#A8A8A8] dark:placeholder-gray-500 focus:outline-none transition-all"
                     />
                     <button type="submit" className="px-4 py-2.5 bg-gradient-to-r from-[#D9480F] to-[#E85D3D] text-white text-xs font-bold rounded-xl flex-shrink-0">
-                      Track
+                      Open
                     </button>
                   </form>
                 </div>
@@ -470,10 +447,10 @@ const Navbar = () => {
                     <Heart className="w-4 h-4 text-[#E85D3D]" /> Wishlist
                     {wishlistCount > 0 && <span className="ml-auto text-[10px] font-black px-1.5 bg-[#E85D3D]/15 text-[#E85D3D] rounded">{wishlistCount}</span>}
                   </Link>
-                  <Link to="/orders" onClick={() => setIsMobileMenuOpen(false)}
+                  <a href="https://www.amazon.in/gp/your-account/order-history" target="_blank" rel="noreferrer" onClick={() => setIsMobileMenuOpen(false)}
                     className="flex items-center gap-2 text-xs font-semibold text-[#4A4A4A] dark:text-gray-300 bg-black/5 dark:bg-white/5 px-3 py-2.5 rounded-xl transition-colors hover:bg-[#E85D3D]/10 hover:text-[#E85D3D]">
                     <PackageCheck className="w-4 h-4 text-[#FF7A00]" /> My Orders
-                  </Link>
+                  </a>
                 </div>
 
                 {/* Theme toggle in mobile */}

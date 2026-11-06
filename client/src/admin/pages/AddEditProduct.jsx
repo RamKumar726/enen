@@ -13,6 +13,7 @@ const AddEditProduct = () => {
     name: '',
     description: '',
     price: 0,
+    amazonUrl: '',
     originalPrice: 0,
     stock: 0,
     category: 'Regular T-Shirt',
@@ -45,21 +46,35 @@ const AddEditProduct = () => {
         if (res.success && res.product) {
           setForm(res.product);
         }
-      });
+      }).catch(err => setMsg(err.message || 'Unable to load product'));
     }
   }, [id, isEdit]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.images?.length || form.images.some(image => !/^https:\/\//i.test(image.url))) {
+    if (!form.images?.length || form.images.some(image => {
+      try { return new URL(image.url).protocol !== 'https:'; } catch (_) { return true; }
+    })) {
       setMsg('Add at least one valid HTTPS product image.');
+      return;
+    }
+    try {
+      const amazon = new URL(form.amazonUrl);
+      const validAmazonUrl = (['amazon.in', 'www.amazon.in'].includes(amazon.hostname.toLowerCase()) && /(?:^|\/)(?:dp|gp\/product)\/[A-Z0-9]{10}(?:\/|$)/i.test(amazon.pathname)) ||
+        (amazon.hostname.toLowerCase() === 'amzn.in' && /^\/d\/[A-Z0-9]+$/i.test(amazon.pathname));
+      if (amazon.protocol !== 'https:' || !validAmazonUrl) throw new Error('invalid');
+    } catch (_) {
+      setMsg('Enter a valid Amazon.in or amzn.in product link.');
       return;
     }
     if (!form.sizes?.length || !form.colors?.length || form.colors.some(color => !color.name.trim() || !/^#[0-9a-f]{6}$/i.test(color.code))) {
       setMsg('Select at least one size and provide valid named colors.');
       return;
     }
-    if (!Number.isInteger(Number(form.price)) || Number(form.price) <= 0 || !Number.isInteger(Number(form.originalPrice)) || Number(form.stock) < 0) {
+    if (!form.name.trim() || form.name.trim().length > 160 || !form.description.trim() || form.description.length > 5000 ||
+        !Number.isInteger(Number(form.price)) || Number(form.price) <= 0 || Number(form.price) > 10000000 ||
+        !Number.isInteger(Number(form.originalPrice)) || Number(form.originalPrice) < 0 || Number(form.originalPrice) > 10000000 ||
+        !Number.isInteger(Number(form.stock)) || Number(form.stock) < 0) {
       setMsg('Enter whole-rupee prices, a positive selling price, and non-negative stock.');
       return;
     }
@@ -148,6 +163,11 @@ const AddEditProduct = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="sm:col-span-2 space-y-1">
+            <label className="text-xs font-bold uppercase text-gray-400">Amazon.in Product URL</label>
+            <input type="url" required placeholder="https://www.amazon.in/dp/B0XXXXXXXX or https://amzn.in/d/..." value={form.amazonUrl || ''} onChange={e => setForm({ ...form, amazonUrl: e.target.value.trim() })} className="w-full bg-[#121218] border border-[#282834] rounded-xl p-3.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-[#E85D3D]" />
+            <p className="text-[11px] text-gray-500">Customers complete checkout, payment, and delivery on Amazon.</p>
+          </div>
           <div className="space-y-1">
             <label className="text-xs font-bold uppercase text-gray-400">Apparel Category</label>
             <select
@@ -184,18 +204,6 @@ const AddEditProduct = () => {
               )}
             </select>
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <label className="text-xs font-bold uppercase text-gray-400">HSN Code</label>
-            <input value={form.hsnCode || ''} maxLength={8} onChange={e => setForm({ ...form, hsnCode: e.target.value.replace(/\D/g, '') })} placeholder="Confirm the correct apparel HSN" className="w-full bg-[#121218] border border-[#282834] rounded-xl p-3.5 text-xs text-white" />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-bold uppercase text-gray-400">Unit Weight (kg)</label>
-            <input type="number" min="0" max="100" step="0.001" value={form.weightKg ?? 0} onChange={e => setForm({ ...form, weightKg: Number(e.target.value) })} className="w-full bg-[#121218] border border-[#282834] rounded-xl p-3.5 text-xs text-white" />
-          </div>
-          <p className="sm:col-span-2 text-[11px] text-amber-400">Required before creating Shiprocket shipments. Enter verified product tax and packed unit weight values.</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

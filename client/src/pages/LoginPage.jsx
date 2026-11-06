@@ -78,10 +78,10 @@ const LoginPage = () => {
             <div className="space-y-1.5">
               <div className="flex justify-between items-center">
                 <label className="text-[10px] font-extrabold uppercase tracking-widest text-[#7A7A7A] dark:text-gray-500">Password</label>
-                <a href="#" className="text-[10px] text-[#E85D3D] hover:text-[#FF7A00] transition-colors font-semibold">Forgot?</a>
+                <Link to="/forgot-password" className="text-[10px] text-[#E85D3D] hover:text-[#FF7A00] transition-colors font-semibold">Forgot?</Link>
               </div>
               <div className={wrapCls('password')}>
-                <input type={showPassword ? 'text' : 'password'} required placeholder="••••••••••" value={password}
+                <input type={showPassword ? 'text' : 'password'} required maxLength={72} autoComplete="current-password" placeholder="Enter your password" value={password}
                   onChange={(e) => setPassword(e.target.value)} onFocus={() => setFocused('password')} onBlur={() => setFocused(null)}
                   className={`${fieldCls('password')} pr-11`} />
                 <Lock className={iconCls('password')} />
@@ -108,7 +108,7 @@ const LoginPage = () => {
             </p>
             <div className="inline-flex items-center gap-1.5 text-[10px] text-[#A8A8A8] dark:text-gray-600 font-semibold">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-              <span>256-Bit Encrypted JWT Authentication</span>
+              <span>Secure JWT Sign-In</span>
             </div>
           </div>
         </div>

@@ -19,7 +19,7 @@ const Carousel = ({ overrideBanners, videoUrl }) => {
   const heroRef = useRef(null);
 
   /* Parallax — gentle on mobile for perf */
-  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'], layoutEffect: false });
   const rawY = useTransform(scrollYProgress, [0, 1], [0, 120]);
   const parallaxY = useSpring(rawY, { stiffness: 50, damping: 18 });
   const scaleImg = useTransform(scrollYProgress, [0, 1], [1, 1.08]);

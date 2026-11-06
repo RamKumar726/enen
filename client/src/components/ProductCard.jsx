@@ -1,15 +1,11 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'framer-motion';
-import { Star, ShoppingBag, Flame, Check, Sparkles, Heart } from 'lucide-react';
-import { useCart } from '../context/CartContext';
+import { Star, ShoppingBag, Flame, Sparkles, Heart } from 'lucide-react';
 import { useWishlist } from '../context/WishlistContext';
 
 const ProductCard = ({ product }) => {
-  const { addToCart } = useCart();
   const { isWishlisted, toggleWishlist } = useWishlist();
-  const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || 'M');
-  const [isAdded, setIsAdded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const cardRef = useRef(null);
 
@@ -36,12 +32,6 @@ const ProductCard = ({ product }) => {
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : null;
 
-  const handleQuickAdd = (e) => {
-    e.preventDefault(); e.stopPropagation();
-    addToCart(product, selectedSize, product.colors?.[0]?.name || 'Black', 1);
-    setIsAdded(true);
-    setTimeout(() => setIsAdded(false), 1800);
-  };
 
   return (
     <motion.div
@@ -128,21 +118,6 @@ const ProductCard = ({ product }) => {
           </h3>
         </Link>
 
-        {/* Size selector — compact */}
-        <div className="flex items-center gap-1 flex-wrap">
-          {(product.sizes || ['S', 'M', 'L', 'XL']).map(size => (
-            <motion.button key={size} whileTap={{ scale: 0.82 }}
-              onClick={e => { e.preventDefault(); setSelectedSize(size); }}
-              className={`w-6 h-6 sm:w-7 sm:h-7 text-[9px] sm:text-[10px] font-bold rounded-lg border transition-all ${
-                selectedSize === size
-                  ? 'bg-gradient-to-br from-[#C94A20] to-[#FF7A00] text-white border-transparent shadow-sm'
-                  : 'bg-[#F4F1EA] dark:bg-[#1A1A22] text-[#7A7A7A] dark:text-[#888890] border-[#DDD9D0] dark:border-[#252530] hover:border-[#E85D3D]/50'
-              }`}>
-              {size}
-            </motion.button>
-          ))}
-        </div>
-
         {/* Price + Add button */}
         <div className="flex items-center justify-between gap-1.5 mt-auto pt-2 border-t border-[#EAE6DD] dark:border-[#1E1E28]">
           <div className="flex items-baseline gap-1 min-w-0">
@@ -156,25 +131,9 @@ const ProductCard = ({ product }) => {
             )}
           </div>
 
-          <AnimatePresence mode="wait">
-            <motion.button
-              key={isAdded ? 'added' : 'add'}
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              whileTap={{ scale: 0.88 }}
-              onClick={handleQuickAdd}
-              className={`flex-shrink-0 flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl font-bold text-[10px] sm:text-xs transition-all ${
-                isAdded
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-gradient-to-r from-[#C94A20] to-[#E85D3D] hover:from-[#E85D3D] hover:to-[#FF7A00] text-white shadow-sm hover:shadow-flame-glow'
-              }`}>
-              {isAdded
-                ? <><Check className="w-3 h-3" /><span className="hidden sm:inline">Added</span></>
-                : <><ShoppingBag className="w-3 h-3" /><span>Add</span></>
-              }
-            </motion.button>
-          </AnimatePresence>
+          <Link to={`/product/${product._id || product.slug}`} className="flex-shrink-0 flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl font-bold text-[10px] sm:text-xs bg-gradient-to-r from-[#C94A20] to-[#E85D3D] text-white">
+            <ShoppingBag className="w-3 h-3" /><span>View</span>
+          </Link>
         </div>
       </div>
     </motion.div>

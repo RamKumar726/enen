@@ -84,12 +84,7 @@ const generalLimiter = rateLimit({
 
 app.use(generalLimiter);
 
-app.use(express.json({
-  limit: '1mb',
-  verify: (req, res, buffer) => {
-    if (req.originalUrl.startsWith('/api/payment/webhook')) req.rawBody = Buffer.from(buffer);
-  }
-}));
+app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use((req, res, next) => {
   if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) req.body = {};
@@ -108,9 +103,6 @@ app.use((req, res, next) => {
 // Run after request parsers so parsed JSON and form bodies are sanitized.
 app.use(mongoSanitize());
 
-// Static directory for uploaded images
-app.use('/uploads', express.static(process.env.UPLOADS_DIR || path.join(__dirname, 'uploads'), { maxAge: '1d', immutable: false }));
-
 // Request logger (disabled in production)
 if (process.env.NODE_ENV !== 'production') {
   app.use((req, res, next) => {
@@ -126,12 +118,7 @@ app.use('/api/products', require('./routes/products'));
 app.use('/api/carousel', require('./routes/carousel'));
 app.use('/api/clans', require('./routes/clans'));
 app.use('/api/admin', require('./routes/admin'));
-app.use('/api/orders', require('./routes/orders'));
-app.use('/api/cart', require('./routes/cart'));
 app.use('/api/users', require('./routes/users'));
-app.use('/api/payment', require('./routes/payment'));
-app.use('/api/shiprocket', require('./routes/shiprocket'));
-app.use('/api/fulfillment-events', require('./routes/fulfillmentEvents'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -153,17 +140,11 @@ app.use(errorHandler);
 
 const startServer = async () => {
   const { connectDB } = require('./config/db');
-  const { expirePendingPaymentOrders } = require('./controllers/orderController');
   await connectDB();
   const port = Number(process.env.PORT || 5000);
   const server = app.listen(port, () => console.log(`[ENEN API] Listening on port ${port}`));
-  const paymentExpiryTimer = setInterval(() => {
-    expirePendingPaymentOrders().catch(err => console.error('[Order expiry] Failed:', err.message));
-  }, 60 * 1000);
-  paymentExpiryTimer.unref();
 
   const shutdown = () => {
-    clearInterval(paymentExpiryTimer);
     server.close(() => require('mongoose').disconnect().finally(() => process.exit(0)));
     setTimeout(() => process.exit(1), 10000).unref();
   };

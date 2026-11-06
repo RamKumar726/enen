@@ -1,12 +1,10 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fetchProductById } from '../redux/slices/productSlice';
-import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
-import { productService } from '../services/api';
 import ProductCard from '../components/ProductCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { 
@@ -20,7 +18,6 @@ import {
   Plus, 
   Minus, 
   Sparkles,
-  MessageSquare,
   ArrowLeft,
   Share2,
   ChevronLeft,
@@ -155,97 +152,16 @@ const ProductImageCarousel = ({ images, productName }) => {
   );
 };
 
-/* ─── Pincode Delivery Timeline ─── */
-const getDeliveryDate = () => {
-  const date = new Date();
-  let daysAdded = 0;
-  while (daysAdded < 7) {
-    date.setDate(date.getDate() + 1);
-    const day = date.getDay();
-    if (day !== 0 && day !== 6) daysAdded++;
-  }
-  return date.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
-};
-
-const ShipmentTimeline = ({ pincode }) => {
-  const steps = [
-    { label: 'Order Placed', desc: 'Today', icon: '📦', done: true },
-    { label: 'Packed', desc: 'Day 1', icon: '🏷️', done: true },
-    { label: 'Dispatched', desc: 'Day 2–3', icon: '🚚', done: false },
-    { label: 'Out for Delivery', desc: 'Day 6–7', icon: '🛵', done: false },
-    { label: 'Delivered', desc: getDeliveryDate(), icon: '✅', done: false },
-  ];
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.35 }}
-      className="mt-3 p-4 bg-emerald-500/8 border border-emerald-500/25 rounded-2xl space-y-3"
-    >
-      <div className="flex items-center gap-2">
-        <Truck className="w-4 h-4 text-emerald-400" />
-        <p className="text-xs font-extrabold text-emerald-400 uppercase tracking-wider">
-          Estimated Delivery to {pincode}
-        </p>
-      </div>
-      <p className="text-sm font-black text-white">
-        🗓 {getDeliveryDate()}
-        <span className="ml-2 text-[10px] text-gray-400 font-normal">(5–7 business days)</span>
-      </p>
-
-      {/* Stepper */}
-      <div className="relative flex items-start gap-0 pt-2">
-        {/* Progress line */}
-        <div className="absolute left-4 top-5 bottom-0 w-px bg-[#282834]" />
-        <div className="absolute left-4 top-5 w-px bg-gradient-to-b from-emerald-500 to-[#E85D3D]" style={{ height: '40%' }} />
-
-        <div className="flex flex-col gap-4 w-full">
-          {steps.map((step, i) => (
-            <div key={i} className="flex items-center gap-4 relative">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0 z-10 border-2 transition-all ${
-                step.done ? 'bg-emerald-500/20 border-emerald-500' : 'bg-[#18181F] border-[#282834]'
-              }`}>
-                {step.icon}
-              </div>
-              <div>
-                <p className={`text-xs font-bold ${step.done ? 'text-white' : 'text-gray-500'}`}>{step.label}</p>
-                <p className="text-[10px] text-gray-500">{step.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
 /* ─── Main Component ─── */
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { currentProduct, detailLoading, items } = useSelector((state) => state.products);
-  const { addToCart } = useCart();
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { isWishlisted, toggleWishlist } = useWishlist();
 
-  const [selectedSize, setSelectedSize] = useState('L');
-  const [selectedColor, setSelectedColor] = useState('Obsidian Black');
-  const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
-  const [isAdded, setIsAdded] = useState(false);
-
-  // Pincode delivery state
-  const [pincode, setPincode] = useState('');
-  const [showTimeline, setShowTimeline] = useState(false);
-
-  // Review Form State
-  const [reviewRating, setReviewRating] = useState(5);
-  const [reviewComment, setReviewComment] = useState('');
-  const [reviewSubmitting, setReviewSubmitting] = useState(false);
-  const [reviewMsg, setReviewMsg] = useState(null);
 
   useEffect(() => {
     if (id) {
@@ -253,20 +169,6 @@ const ProductDetail = () => {
       window.scrollTo(0, 0);
     }
   }, [id, dispatch]);
-
-  useEffect(() => {
-    if (currentProduct?.sizes?.length) {
-      setSelectedSize(currentProduct.sizes[0]);
-    }
-    if (currentProduct?.colors?.length) {
-      setSelectedColor(currentProduct.colors[0].name);
-    }
-  }, [currentProduct]);
-
-  // Show delivery timeline when pincode is 6 digits
-  useEffect(() => {
-    setShowTimeline(pincode.length === 6 && /^\d{6}$/.test(pincode));
-  }, [pincode]);
 
   if (detailLoading || !currentProduct) {
     return (
@@ -280,38 +182,12 @@ const ProductDetail = () => {
     ? currentProduct.images
     : [{ url: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?auto=format&fit=crop&w=800&q=80', alt: 'ENEN Tee' }];
 
-  const handleAddToCart = () => {
-    addToCart(currentProduct, selectedSize, selectedColor, quantity);
-    setIsAdded(true);
-    setTimeout(() => setIsAdded(false), 2000);
-  };
-
-  const handleBuyNow = () => {
-    addToCart(currentProduct, selectedSize, selectedColor, quantity);
-    navigate('/checkout');
-  };
-
-  const handleReviewSubmit = async (e) => {
-    e.preventDefault();
-    if (!reviewComment.trim()) return;
-
-    setReviewSubmitting(true);
-    try {
-      const response = await productService.addReview(currentProduct._id || currentProduct.id, {
-        rating: reviewRating,
-        comment: reviewComment
-      });
-      if (response.success) {
-        setReviewMsg('Review posted successfully! 🔥');
-        setReviewComment('');
-        dispatch(fetchProductById(id));
-      }
-    } catch (err) {
-      setReviewMsg(err.message || 'Failed to submit review');
-    } finally {
-      setReviewSubmitting(false);
-      setTimeout(() => setReviewMsg(null), 4000);
+  const handleShopOnAmazon = () => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: { pathname: `/product/${id}` } } });
+      return;
     }
+    if (currentProduct.amazonUrl) window.open(currentProduct.amazonUrl, '_blank', 'noopener,noreferrer');
   };
 
   const relatedProducts = items
@@ -394,128 +270,17 @@ const ProductDetail = () => {
             {currentProduct.description}
           </p>
 
-          {/* COLOR SELECTOR */}
-          {currentProduct.colors?.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase text-gray-400 block">
-                Color: <span className="text-white">{selectedColor}</span>
-              </label>
-              <div className="flex items-center gap-3">
-                {currentProduct.colors.map((color) => (
-                  <button
-                    key={color.name}
-                    type="button"
-                    onClick={() => setSelectedColor(color.name)}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all ${
-                      selectedColor === color.name
-                        ? 'bg-[#18181F] text-white border-[#E85D3D] shadow-flame-glow'
-                        : 'bg-[#121218] text-gray-400 border-[#282834] hover:border-gray-500'
-                    }`}
-                  >
-                    <span className="w-3.5 h-3.5 rounded-full border border-gray-600" style={{ backgroundColor: color.code }} />
-                    <span>{color.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* SIZE SELECTOR */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs font-bold uppercase text-gray-400">
-              <span>Select Size: <strong className="text-[#E85D3D]">{selectedSize}</strong></span>
-              <span className="text-gray-500 text-[11px] underline cursor-pointer">Size Guide</span>
-            </div>
-            <div className="grid grid-cols-5 gap-2">
-              {(currentProduct.sizes || ['S', 'M', 'L', 'XL', 'XXL']).map((size) => (
-                <button
-                  key={size}
-                  type="button"
-                  onClick={() => setSelectedSize(size)}
-                  className={`py-3 text-sm font-extrabold rounded-2xl border transition-all ${
-                    selectedSize === size
-                      ? 'bg-gradient-to-r from-[#D9480F] to-[#E85D3D] text-white border-[#E85D3D] shadow-flame-glow'
-                      : 'bg-[#18181F] text-gray-300 border-[#282834] hover:border-gray-500'
-                  }`}
-                >
-                  {size}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* PINCODE DELIVERY */}
-          <div className="space-y-2 pt-1">
-            <label className="text-xs font-bold uppercase text-gray-400 flex items-center gap-2">
-              <Truck className="w-3.5 h-3.5 text-[#FF7A00]" /> Check Delivery Date
-            </label>
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                maxLength={6}
-                placeholder="Enter 6-digit Pincode"
-                value={pincode}
-                onChange={(e) => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                className="flex-1 bg-[#18181F] border border-[#282834] rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#E85D3D] transition-colors"
-              />
-              {pincode.length === 6 && (
-                <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="text-emerald-400 text-xs font-bold px-3 py-2.5 bg-emerald-500/10 rounded-xl border border-emerald-500/30"
-                >
-                  ✓ Valid
-                </motion.span>
-              )}
-            </div>
-
-            <AnimatePresence>
-              {showTimeline && <ShipmentTimeline pincode={pincode} />}
-            </AnimatePresence>
-          </div>
-
-          {/* QUANTITY & ACTIONS */}
+          <p className="text-xs text-gray-500">Select size, color, and delivery options on Amazon.</p>
+          {/* AMAZON PURCHASE */}
           <div className="space-y-4 pt-2">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3 bg-[#18181F] border border-[#282834] rounded-2xl p-2">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="p-2 hover:bg-[#22222D] text-gray-300 rounded-xl"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-                <span className="w-8 text-center text-sm font-extrabold text-white">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="p-2 hover:bg-[#22222D] text-gray-300 rounded-xl"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={handleAddToCart}
-                className={`flex-1 py-4 rounded-2xl font-extrabold text-sm flex items-center justify-center gap-3 transition-all shadow-xl ${
-                  isAdded
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-gradient-to-r from-[#D9480F] via-[#E85D3D] to-[#FF7A00] text-white shadow-flame-glow hover:shadow-flame-intense'
-                }`}
-              >
-                {isAdded ? (
-                  <><Check className="w-5 h-5" /> Added to Cart!</>
-                ) : (
-                  <><ShoppingBag className="w-5 h-5" /> ADD TO CART</>
-                )}
-              </motion.button>
-            </div>
-
             <button
-              onClick={handleBuyNow}
-              className="w-full py-4 bg-[#18181F] hover:bg-[#22222D] text-white font-bold text-sm rounded-2xl border border-[#282834] hover:border-[#E85D3D]/50 transition-all flex items-center justify-center gap-2"
+              onClick={handleShopOnAmazon}
+              disabled={isAuthenticated && !currentProduct.amazonUrl}
+              className="w-full py-4 bg-gradient-to-r from-[#D9480F] via-[#E85D3D] to-[#FF7A00] disabled:opacity-50 text-white font-extrabold text-sm rounded-2xl shadow-flame-glow transition-all flex items-center justify-center gap-2"
             >
-              <Sparkles className="w-4 h-4 text-[#FF7A00]" /> BUY NOW (INSTANT CHECKOUT)
+              <ShoppingBag className="w-4 h-4" /> {isAuthenticated ? (currentProduct.amazonUrl ? 'SHOP ON AMAZON' : 'AMAZON LINK COMING SOON') : 'LOGIN TO SHOP ON AMAZON'}
             </button>
+            <p className="text-center text-[11px] text-gray-500">Amazon handles checkout, payment, delivery and order support. Price and availability may change on Amazon.</p>
           </div>
 
           {/* TRUST BADGES */}
@@ -524,10 +289,10 @@ const ProductDetail = () => {
               <ShieldCheck className="w-4 h-4 text-[#E85D3D]" /> 240 GSM Heavy
             </div>
             <div className="flex items-center gap-2">
-              <Truck className="w-4 h-4 text-[#FF7A00]" /> Express Delivery
+              <Truck className="w-4 h-4 text-[#FF7A00]" /> Amazon Delivery
             </div>
             <div className="flex items-center gap-2">
-              <RefreshCw className="w-4 h-4 text-amber-400" /> Easy Exchanges
+              <RefreshCw className="w-4 h-4 text-amber-400" /> Amazon Returns
             </div>
           </div>
 
@@ -625,65 +390,9 @@ const ProductDetail = () => {
               )}
             </div>
 
-            {/* WRITE A REVIEW FORM */}
-            <div className="pt-6 border-t border-[#282834] space-y-4">
-              <h4 className="font-extrabold text-white text-base flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-[#E85D3D]" /> Leave a Flame Review
-              </h4>
-
-              {isAuthenticated ? (
-                <form onSubmit={handleReviewSubmit} className="space-y-4 max-w-xl">
-                  {reviewMsg && (
-                    <p className={`text-xs font-bold p-3 rounded-xl border ${
-                      reviewMsg.includes('success') || reviewMsg.includes('🔥')
-                        ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30'
-                        : 'text-red-400 bg-red-500/10 border-red-500/30'
-                    }`}>
-                      {reviewMsg}
-                    </p>
-                  )}
-
-                  <div>
-                    <label className="text-xs font-bold uppercase text-gray-400 block mb-1">Rating</label>
-                    <div className="flex items-center gap-2">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          type="button"
-                          onClick={() => setReviewRating(star)}
-                          className="p-1 text-amber-400 hover:scale-110 transition-transform"
-                        >
-                          <Star className={`w-6 h-6 ${star <= reviewRating ? 'fill-current' : 'text-gray-600'}`} />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <textarea
-                      required
-                      rows="3"
-                      placeholder="Share your thoughts on fit, print quality, and comfort..."
-                      value={reviewComment}
-                      onChange={(e) => setReviewComment(e.target.value)}
-                      className="w-full bg-[#121218] border border-[#282834] rounded-2xl p-4 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#E85D3D]"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={reviewSubmitting}
-                    className="px-6 py-2.5 bg-gradient-to-r from-[#D9480F] to-[#E85D3D] text-white text-xs font-extrabold rounded-xl shadow-flame-glow hover:shadow-flame-intense transition-all"
-                  >
-                    {reviewSubmitting ? 'Posting...' : 'Submit Review'}
-                  </button>
-                </form>
-              ) : (
-                <p className="text-xs text-gray-400">
-                  Please <Link to="/login" className="text-[#E85D3D] underline font-bold">sign in</Link> to write a review.
-                </p>
-              )}
-            </div>
+            <p className="border-t border-[#282834] pt-5 text-xs text-gray-400">
+              Purchases and verified reviews are handled by Amazon. Visit the Amazon product page to read or leave a review.
+            </p>
           </div>
         )}
       </div>

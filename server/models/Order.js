@@ -41,9 +41,6 @@ const OrderSchema = new mongoose.Schema({
     enum: ['Pending', 'Paid', 'Failed', 'Refund Pending', 'Refunded'], 
     default: 'Pending' 
   },
-  paymentId: { type: String, default: '' },
-  razorpayOrderId: { type: String, default: '' },
-  razorpayPaymentId: { type: String, default: '' },
   paymentHoldExpiresAt: { type: Date, default: undefined },
   orderStatus: { 
     type: String, 
@@ -67,12 +64,6 @@ const OrderSchema = new mongoose.Schema({
   taxPrice: { type: Number, required: true, default: 0 },
   shippingPrice: { type: Number, required: true, default: 0 },
   totalAmount: { type: Number, required: true },
-  trackingNumber: { type: String, default: '' },
-  shiprocketOrderId: { type: String, default: '' },
-  shiprocketShipmentId: { type: String, default: '' },
-  shiprocketStatus: { type: String, enum: ['Not Created', 'Creating', 'Created', 'Needs Reconciliation'], default: 'Not Created' },
-  carrierStatus: { type: String, default: '' },
-  carrierUpdatedAt: { type: Date, default: undefined },
   deliveredAt: { type: Date }
 }, {
   timestamps: true
@@ -81,6 +72,5 @@ const OrderSchema = new mongoose.Schema({
 OrderSchema.index({ userId: 1, createdAt: -1 });
 OrderSchema.index({ orderStatus: 1, createdAt: -1 });
 OrderSchema.index({ paymentStatus: 1, paymentHoldExpiresAt: 1 });
-OrderSchema.index({ trackingNumber: 1 }, { sparse: true });
 
 module.exports = mongoose.model('Order', OrderSchema);

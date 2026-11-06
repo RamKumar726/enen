@@ -80,10 +80,14 @@ exports.getAllBanners = async (req, res) => {
 
 exports.createBanner = async (req, res) => {
   try {
-    const { imageUrl, title, description, discountPercentage, ctaText, ctaLink, displayOrder } = req.body;
+    const { imageUrl, title, description, discountPercentage, ctaText, ctaLink, displayOrder, isActive } = req.body;
 
     if (typeof imageUrl !== 'string' || !safeImageUrl(imageUrl) || typeof title !== 'string' || !title.trim() || title.length > 160 ||
         (req.body.ctaLink !== undefined && !safeCtaLink(req.body.ctaLink)) ||
+        (description !== undefined && (typeof description !== 'string' || description.length > 1000)) ||
+        (ctaText !== undefined && (typeof ctaText !== 'string' || ctaText.trim().length > 60)) ||
+        (displayOrder !== undefined && (!Number.isInteger(Number(displayOrder)) || Number(displayOrder) < 1)) ||
+        (isActive !== undefined && typeof isActive !== 'boolean') ||
         (discountPercentage !== undefined && (!Number.isFinite(Number(discountPercentage)) || Number(discountPercentage) < 0 || Number(discountPercentage) > 100))) {
       return res.status(400).json({ success: false, message: 'Provide a valid HTTPS image URL, title, CTA link, and discount percentage' });
     }
@@ -97,7 +101,7 @@ exports.createBanner = async (req, res) => {
       ctaText: ctaText || 'Shop Now',
       ctaLink: ctaLink || '/shop',
       displayOrder: Number(displayOrder) || count + 1,
-      isActive: true
+      isActive: isActive !== undefined ? isActive : true
     });
 
     res.status(201).json({ success: true, message: 'Carousel banner created successfully!', banner });
@@ -115,6 +119,10 @@ exports.updateBanner = async (req, res) => {
     if (updates.imageUrl !== undefined && !safeImageUrl(updates.imageUrl)) return res.status(400).json({ success: false, message: 'Image URL must use HTTPS' });
     if (updates.ctaLink !== undefined && !safeCtaLink(updates.ctaLink)) return res.status(400).json({ success: false, message: 'CTA link must be a local path or HTTPS URL' });
     if (updates.title !== undefined && (typeof updates.title !== 'string' || !updates.title.trim() || updates.title.length > 160)) return res.status(400).json({ success: false, message: 'Invalid banner title' });
+    if (updates.description !== undefined && (typeof updates.description !== 'string' || updates.description.length > 1000)) return res.status(400).json({ success: false, message: 'Description must be 1000 characters or fewer' });
+    if (updates.ctaText !== undefined && (typeof updates.ctaText !== 'string' || updates.ctaText.trim().length > 60)) return res.status(400).json({ success: false, message: 'Button text must be 60 characters or fewer' });
+    if (updates.displayOrder !== undefined && (!Number.isInteger(Number(updates.displayOrder)) || Number(updates.displayOrder) < 1)) return res.status(400).json({ success: false, message: 'Display order must be a positive integer' });
+    if (updates.isActive !== undefined && typeof updates.isActive !== 'boolean') return res.status(400).json({ success: false, message: 'Active status must be boolean' });
     if (updates.discountPercentage !== undefined && (!Number.isFinite(Number(updates.discountPercentage)) || Number(updates.discountPercentage) < 0 || Number(updates.discountPercentage) > 100)) return res.status(400).json({ success: false, message: 'Discount must be between 0 and 100 percent' });
     const banner = await Carousel.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
 
