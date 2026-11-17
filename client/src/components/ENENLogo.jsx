@@ -2,7 +2,7 @@ import React from 'react';
 
 /**
  * ENEN Logo Component
- * Renders logo.jpg image with fallback and sizing options.
+ * Renders the theme-specific logo with sizing options.
  */
 const ENENLogo = ({
   variant = 'dark',        // kept for backward compatibility
@@ -21,11 +21,12 @@ const ENENLogo = ({
 
   const s = sizes[size] || sizes.md;
   const textColor = variant === 'dark' ? 'text-[#F0EDE8]' : 'text-[#1C1C1C]';
+  const logoSrc = variant === 'dark' ? '/dark-logo.jpg' : '/light-logo.jpg';
 
   return (
     <div className={`flex items-center gap-3 ${orientation === 'vertical' ? 'flex-col items-center text-center' : ''} ${className}`}>
       <img
-        src="/logo.jpg"
+        src={logoSrc}
         alt="ENEN Logo"
         className={`${s.img} w-auto object-contain rounded-md shadow-sm border border-[#E85D3D]/20`}
       />
@@ -52,4 +53,3 @@ const ENENLogo = ({
 };
 
 export default ENENLogo;
-
